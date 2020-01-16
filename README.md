@@ -20,7 +20,7 @@ Create a quick cruise summary report detailing the survey track, trawl catches, 
       + Definitions
       + GeoData
    
-For acoustic, biotic and track data, it is also possible to replace the folder structure with paths directly to the location of data on the server on board. This way, the files in the script with be updated automatically when you knit the file. However, CTD data cannot be read directly from the server location with this version of the script (as there are several different types of .cnv-files).
+For acoustic, biotic and track data, it is also possible to replace the folder structure with paths directly to the location of data on the server on board. This way, the files in the script with be updated automatically when you knit the file. However, CTD data cannot be read directly from the server location with this version of the script (as there are several different types of .cnv-files and the current code looks for files with this extension).
 
 4. Download the HI logo from https://hinnsiden.no/tema/profiltorg/LOGO/HI%20logo%20farger%20engelsk.jpg and place in project directory (optional, but see information below on how to avoid an error if you do not include the logo).
 
@@ -65,23 +65,23 @@ NB! It is important not to place other files in these folders, as the code is ba
 
 2. Change title and author.
 
-3. Check the r packages specified in the second r code chunk (lines 23-24), and install any packages you do not have on your computer.
+3. Check the r packages specified in the second r code chunk (lines 27-29), and install any packages you do not have on your computer.
 
-4. Lines 40-42: specify the extent of your survey area and the depth contours you would like to show in map plots.
+4. Lines 44-46: specify the extent of your survey area and the depth contours you would like to show in map plots.
 
 ### Trawl data
 
-5. Load packages by running lines 23-25, then run lines 37-72. Run unique(dataset$`Station type`) and check that the gear definitions on lines 75-83 correspond to those used in your cruise. If not, change the definitions.
+5. Load packages by running lines 27-29 (without knitting the whole document!), then run lines 55-76. Run unique(dataset$`Station type`) and check that the gear definitions on lines 80-87 correspond to those used in your cruise. If not, change the definitions.
 
-6. Check if you are using any other trawls than those specified at lines 495-497, if so add them/modify.
+6. Check if you are using any other trawls than those specified at lines 499-501, if so add them/modify. Change also the gears at line 505 if necessary.
 
-7. Lines 622-955 contain code for plotting catches of different species on a map, by gear type. For each species, two sets of plots are produced - one showing catch rates in biomass/nmi and one showing numbers/nmi. Adjust this code to match the species in your area by changing the "species <-" argument in each code chunk, and deleting/copying code chunks as necessary. The figure size can be adjusted using the "fig.width" and "fig.height" arguments at the beginning of each code chunk. In this example, this has been done for herring and shrimp, which were caught in fewer gears than the other species.
+7. Lines 622-959 contain code for plotting catches of different species on a map, by gear type. For each species, two sets of plots are produced - one showing catch rates in biomass/nmi and one showing numbers/nmi. Adjust this code to match the species in your area by changing the "species <-" argument in each code chunk, and deleting/copying code chunks as necessary. The figure size can be adjusted using the "fig.width" and "fig.height" arguments at the beginning of each code chunk. In this example, this has been done for herring and shrimp, which were caught in fewer gears than the other species.
 
-8. Lines 971-972: specify the species that you wish to plot length distributions, length-weight relationships, and length-age relationships for. Here they are divided into larger (demersal) and smaller (pelagic) species. Note that age data will not be available early in the survey, and will later only be available for species whose otholits are read on board.
+8. Lines 975-976: specify the species that you wish to plot length distributions, length-weight relationships, and length-age relationships for. Here they are divided into larger (demersal) and smaller (pelagic) species. Note that age data will not be available early in the survey, and will later only be available for species whose otholits are read on board.
 
-9. Line 1027: This inline code summarises the total distance of scrutinized acoustic transects, accounting for the possibility of a reset in the log values, i.e., that the log reaches 10000 and then starts over from 1. No change necessary.
+9. Line 1030: This inline code summarises the total distance of scrutinized acoustic transects, accounting for the possibility of a reset in the log values, i.e., that the log reaches 10000 and then starts over from 1. No change necessary.
 
-10. Line 1029: In this section it is possible to add screenshots from LSSS (or other images) in case you find particularly interesting or unusual echograms. The screenshot is placed in the project directory, and the filename inserted within the brackets on line 1031. The figure width can be adjusted within the curly brackets. Remove line 1031 and the figure text at line 1033 in case you have no screenshots to add.
+10. Line 1032: In this section it is possible to add screenshots from LSSS (or other images) in case you find particularly interesting or unusual echograms. The screenshot must be placed in the project directory, and the filename inserted within the brackets on line 1034. The figure width can be adjusted within the curly brackets. Remove line 1034 and the figure text at line 1036 in case you have no screenshots to add.
 
 ### Acoustics
 

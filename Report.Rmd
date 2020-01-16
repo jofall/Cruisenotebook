@@ -25,7 +25,7 @@ knitr::opts_chunk$set(echo = TRUE, dpi = 220, dev = "CairoPNG")
 ```{r, echo=FALSE, message=FALSE}
 #Load required packages
 Packages <- c("plyr","tidyverse", "data.table", "XML", "reshape2", 
-              "chron", "proj4", "readxl", "readODS", "Cairo")
+              "chron", "proj4", "readxl", "readODS", "Cairo", "bookdown")
 invisible(lapply(X = Packages,FUN = library, character.only = TRUE))
 ```
 
