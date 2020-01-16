@@ -1,11 +1,19 @@
-# Cruisenotebook
-Create a quick cruise summary report detailing the survey track, trawl catches, acoustic registrations, and CTD data during or after a cruise. Can be set up to read data direcly from the servers on board.
+---
+title: "Instructions for generating a cruise report with rmarkdown"
+author: "Johanna Fall"
+date: "`r format(Sys.time(), '%d/%m/%Y')`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
 
 ## Create a project and folder structure
 
 1. Create a new R Studio project.
 
-2. Download the cruise report script from https://github.com/jofall/Cruisenotebook and place in project directory.
+2. Download the cruise report script from https://github.com/Sea2Data/cruisetools and place in project directory.
 
 3. The script requires a specific folder structure for storing the cruise data. Create these folders in the project directory:
    + Data
