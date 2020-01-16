@@ -61,6 +61,8 @@ NB! It is important not to place other files in these folders, as the code is ba
 
 ## Change or check the following in the script to adapt the report to specific survey areas and species in the catch
 
+Line numbers refer to the file *Report_BESS.Rmd*
+
 1. Remove line 3 if you do not wish to have the HI logo.
 
 2. Change title and author.
