@@ -1031,9 +1031,9 @@ A total of `r (round((sum(acu.dat$LOGSTOP[acu.dat$LOGSTOP>5000]-acu.dat$LOGSTART
 
 ## Example echograms
 
-![](LSSS caption 1 capelin.png){width=8in}
+<!-- ![](LSSS caption 1 capelin.png){width=8in} -->
 
-Screenshot from Johan Hjort showing a confirmed capelin school with unusal frequency response, likely caused by emptying of the swim bladder. 06.09.2019, Barents Sea ecosystem survey. Position approximately 76 32 N, 01741 E. LSSS v. 2.6.0.
+<!-- Screenshot from Johan Hjort showing a confirmed capelin school with unusal frequency response, likely caused by emptying of the swim bladder. 06.09.2019, Barents Sea ecosystem survey. Position approximately 76 32 N, 01741 E. LSSS v. 2.6.0. -->
 
 ## Depth-integrated acoustic backscatter
 
