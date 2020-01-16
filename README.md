@@ -5,7 +5,7 @@ Create a quick cruise summary report detailing the survey track, trawl catches, 
 
 1. Create a new R Studio project.
 
-2. Download the cruise report script from https://github.com/jofall/Cruisenotebook and place in project directory.
+2. Download the cruise report script *Report.Rmd* from https://github.com/jofall/Cruisenotebook and place in project directory (or fork/download the entire repository).
 
 3. The script requires a specific folder structure for storing the cruise data. Create these folders in the project directory:
    + Data
@@ -83,41 +83,37 @@ NB! It is important not to place other files in these folders, as the code is ba
 
 10. Line 1032: In this section it is possible to add screenshots from LSSS (or other images) in case you find particularly interesting or unusual echograms. The screenshot must be placed in the project directory, and the filename inserted within the brackets on line 1034. The figure width can be adjusted within the curly brackets. Remove line 1034 and the figure text at line 1036 in case you have no screenshots to add.
 
-### Acoustics
+### Acoustic data
 
-11. Line 1041: For acoustic plots, the maximum bubble size can be adjusted here.
+11. Line 1044: For acoustic plots, the maximum bubble size can be adjusted here.
 
-12. Line 1044: Change year manually in case you are using this script to plot data from a past year.
+12. Line 1047: Change year manually in case you are using this script to plot data from a past year, or use code on line 1048.
 
-13. Line 1045: This script selects data from the 38 kHz frequency, which is what is normally exported from LSSS. Change here if you are looking at other frequencies.
+13. Line 1049: This script selects data from the 38 kHz frequency, which is what is normally exported from LSSS. Change here if you are looking at other frequencies.
 
-14. Lines 1058-1060: If you want other names for the acoustic categories than the Norwegian output from LSSS, specify labels here. "Comment out" or delete lines 1062-1064 & 1200-1202 if you don't want to change the names.
+14. Line 1062: If you want other names for the acoustic categories than the Norwegian output from LSSS, specify labels here. "Comment out" or delete lines 1066-1068 & 1204-1206 if you don't want to change the names.
 
-15. Line 1069: Check name of survey and vessel.
+15. Line 1073: Check name of survey and vessel.
 
-16. Line 1091/1111: Specify names of pelagic/demersal acoustic categories that you want to plot on a map.
+16. Line 1095/1115: Specify names of pelagic/demersal acoustic categories that you want to plot on a map.
 
 ### CTD
 
-17. Line 1403: Choose the maximum depth for plots of density and irradiance.
-
-18. Lines 1457-1458: For figures of diel variation in acoustic backscatter - choose layerdepth, i.e., the lower depth of the layer over which acoustic backscatter will be integrated and plotted against light level (upper limit is the surface). Also choose a suitable bottom depth, i.e., it needs to be deep enough for the chosen depth layer to move deeper. Example: if we want to look at diel variation in backscatter in the upper 100 m, we set layerdepth = 100 m and bottomdepth to, e.g., 200 m so that we only look at samples taken in areas where the scatterers in the upper 100 m can move deeper.
-
-19. Line 1524: Choose maximum distance in km between acoustic registrations and CTD measurements. Acoustic registrations farther away from a CTD will not be included in the figures.
+17. Line 1376: Choose the maximum depth for plots of density and irradiance.
 
 ### Whales
 
-20. Lines 1624-1628: If other species have been observed, specify names here. 
+20. Line 1446: If other species have been observed, specify names here. 
 
-21. Line 1651: This line was required to clean some old entries from the file that belonged to a different cruise. "Comment out" or delete if this does not apply to your cruise.
+21. Line 1474: This line was required to clean some old entries from the file that belonged to a different cruise. "Comment out" or delete if this does not apply to your cruise.
 
-22. Lines 1689-1720: These plots assume that you are in an area where white-beaked dolphins are much more abundant than the other species, and they therefore get their own plot. If this does not apply, the two plots can be combined into one by deleting the second block of code and removing "%>% dplyr::filter(!species == "White-beaked dolphin")" from the first plot.
+22. Lines 1513-1543: These plots assume that you are in an area where white-beaked dolphins are much more abundant than the other species, and they therefore get their own plot. If this does not apply, the two plots can be combined into one by deleting the second block of code and removing "%>% dplyr::filter(!species == "White-beaked dolphin")" from the first plot.
 
 ### Birds
 
-23. Lines 1818-1837: These two figures show histograms of the total number observed, by species. As some species occur in higher numbers than others, one figure shows species that are more abundant while the other shows those occuring in lower numbers. The split between the figures can be specified at line 1819.
+23. Lines 1645-1662: These two figures show histograms of the total number observed, by species. As some species occur in higher numbers than others, one figure shows species that are more abundant while the other shows those occuring in lower numbers. The split between the figures can be specified at line 1642.
 
-24. The last set of figures show the spatial distribution of bird observations. These are divided into three plots based on observed numbers - low, medium, and high. The split between these three plots can be adjusted at lines 1862, 1880, and 1897 (e.g., "filter(maxN>25)").
+24. The last set of figures show the spatial distribution of bird observations. These are divided into three plots based on observed numbers - low, medium, and high. The split between these three plots can be adjusted at lines 1685, 1703, and 1720 (e.g., "filter(maxN>25)").
 
 
 ---

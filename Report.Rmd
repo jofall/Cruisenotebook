@@ -1044,7 +1044,8 @@ Screenshot from Johan Hjort showing a confirmed capelin school with unusal frequ
 Bubble.size<-9        #Max size of bubbles in bubble plots
 
 ### Selection variables
-Year <- 2019 #format(Sys.time(), "%Y")
+Year <- 2019 
+#format(Sys.time(), "%Y")
 Frequency<-c(38000)         #c(3800,120000) c(120000)  - NULL=all frequencies
 
 #Select all species, and the total, and the 38 kHz frequency (in case there are other frequencies in the file)
@@ -1259,37 +1260,6 @@ ggplot(acu.wmean %>% dplyr::filter(variable %in% demersals),
   labs(y = "Number of observations (scrutinized nmi)", 
        x = "Distance to max scutinized depth (m)", title = "Demersal species")
 ```
-\pagebreak
-### Depth distribution versus solar elevation angle
-
-The figures show the distance from the mean weighted depth of acoustic registrations to the max scrutinized depth (corresponding to bottom depth when depth <= 600 m) versus solar elevation angle. The black line is a GAM smoother of the relationship, with the orange field showing the standard error around the mean. The darkest blue field corresponds to night, and the transition zone to the light blue field (daylight) corresponds to dawn and dusk (civil twilight).
-
-```{r, echo=FALSE, message=FALSE, fig.width=9, fig.height=5.5, out.width= "80%",warning=FALSE, fig.align="center"}
-
-#Plot distance of weighted SA to seafloor vs time of day (continous)
-ggplot(acu.wmean %>% dplyr::filter(variable %in% pelagics),
-       aes(corr.sun, BDMAX-wdepth))+
-  geom_rect(aes(ymin = 0, ymax = 600, xmin = min(acu.wmean$corr.sun), xmax = 0), fill = "#0D25D9", alpha = 0.2)+
-    geom_rect(aes(ymin = 0, ymax = 600, xmin = -6, xmax = 0), fill = "#7E89DA", alpha = 0.2)+
-  geom_rect(aes(ymin = 0, ymax = 600, xmin = 0, xmax = max(acu.wmean$corr.sun)), fill = "#EEF0FF", alpha = 0.2)+
-  geom_point(size = 1, color="black", shape = 21)+ scale_y_continuous(limits=c(0,620))+
-  geom_smooth(method="gam",formula = y ~ s(x, bs = "cs"), size = 0.5,fill = "orange", color="black") + facet_wrap(~variable)+theme_bw()+
-  labs(x="Solar elevation angle (degrees above horizon)", 
-       y = "Distance to max scrutinized depth (m)", title = "Pelagic species")
-```
-
-```{r, echo=FALSE, message=FALSE, fig.width=9, fig.height=5.5, out.width= "80%", warning=FALSE, fig.align="center"}
-
-ggplot(acu.wmean %>% dplyr::filter(variable %in% demersals),
-       aes(corr.sun, BDMAX-wdepth))+
-  geom_rect(aes(ymin = 0, ymax = 600, xmin = min(acu.wmean$corr.sun), xmax = 0), fill = "#0D25D9", alpha = 0.2)+
-    geom_rect(aes(ymin = 0, ymax = 600, xmin = -6, xmax = 0), fill = "#7E89DA", alpha = 0.2)+
-  geom_rect(aes(ymin = 0, ymax = 600, xmin = 0, xmax = max(acu.wmean$corr.sun)), fill = "#EEF0FF", alpha = 0.2)+
-  geom_point(size = 1, color="black", shape = 21)+ scale_y_continuous(limits=c(0,620))+
-  geom_smooth(method="gam",formula = y ~ s(x, bs = "cs"), size = 0.5,fill = "orange", color="black") + facet_wrap(~variable)+theme_bw()+
-  labs(x="Solar elevation angle (degrees above horizon)", 
-       y = "Distance to max scrutinized depth (m)", title = "Demersal species")
-```
 
 \pagebreak
 
@@ -1451,159 +1421,9 @@ ggplot(ctd, aes(par_irradiance, pressure_db, group=station, color=newtime))+
         panel.grid.minor = element_blank())
 
 ```
-  
-\pagebreak
-
-### Diel variation in acoustic backscatter in the upper 100 m layer
-```{r, echo=FALSE, message=FALSE}
-#summarise total SA in upper 100 m, for each scrutinized nmi
-layerdepth <- 100
-bottomdepth <- 200
-
-#fix species names in the acoustic data that we melted above
-acu.ch.melt$variable <- factor(acu.ch.melt$variable, 
-                                    levels = c(paste(names(acu.ch)[17:ncol(acu.ch)])),
-                                    #NB change labels depending on species in file
-                                    labels = c("Other", "Plankton", "Polar cod",
-                                               "Herring","Capelin",
-                                               "0-group", "Saithe", "Blue whiting",
-                                               "Norway pout", "Redfish",
-                                               "Haddock", "Cod", "Total"))
-
-saupper100 <- acu.ch.melt %>% dplyr::filter(PDMAX<=layerdepth & BDMAX>=bottomdepth) %>% group_by(LONGITUD,LATITUDE, variable) %>% summarise(totSA=sum(value)) %>% data.frame()
-
-#summarise mean light level in the upper 100 m 
-ctdav <- ctd %>% dplyr::filter(pressure_db<=layerdepth & !is.na(Lon)) %>% group_by(Lon, Lat) %>%  summarise(meanPAR = mean(par_irradiance)) %>% data.frame()
-
-#Connect the closest CTD to the acoustics
-
-#first need to project the geographical location to a distance measure (polar stereographic projection: distance from 75N and 35E in metres)
-dXY <- cbind(lon = ctdav$Lon, lat = ctdav$Lat)
-projXY <- project(dXY, c("+proj=stere", "+lat_0=75",  "+lon_0=35"), inverse = FALSE, degrees = TRUE, silent = FALSE, ellps.default="sphere")
-projXY <- data.frame(projXY)
-names(projXY) <- c("proj_lon", "proj_lat")
-ctd.proj <- data.frame(cbind(ctdav, projXY))
-ctd.proj$year <- 2019 #needed for the code below, fix code so this is not necessary
-
-dXY <- cbind(lon = saupper100$LONGITUD, lat = saupper100$LATITUDE)
-projXY <- project(dXY, c("+proj=stere", "+lat_0=75",  "+lon_0=35"), inverse = FALSE, degrees = TRUE, silent = FALSE, ellps.default="sphere")
-projXY <- data.frame(projXY)
-names(projXY) <- c("proj_lon", "proj_lat")
-saupper100.proj <- data.frame(cbind(saupper100, projXY))
-saupper100.proj$year <- 2019
-
-#Function for combining the acoustic and CTD measurements - finds the closest acoustic mile to the CTD station
-Yg <- saupper100.proj$year
-Xag <- saupper100.proj$proj_lon
-Yag <- saupper100.proj$proj_lat
-Xc <- ctd.proj$proj_lon
-Yc <- ctd.proj$proj_lat
-
-habvar <- ctd.proj[, 3] #meanPAR
-habvar <- as.matrix(habvar)
-habut <- matrix(0, length(Xag), 1)               
-mind <- matrix(0,length(Xag),1)
-
-for ( i in 1:length(Xag)) {
-  utvctd.ag <- ctd.proj$year == Yg[i] 
-  habutv <- habvar[utvctd.ag,]
-  Xcut   <- Xc[utvctd.ag]
-  Ycut   <- Yc[utvctd.ag]
-  d <- sqrt((Xcut-Xag[i])^2+(Ycut-Yag[i])^2)
-  dmin <- which(d ==(min(d)))
-  dmin1 <-dmin[1]
-  hablinje = habutv[dmin1]
-  habut[i,] = hablinje
-  mind[i] <- d[dmin1]
-}
-
-out <- cbind(habut, mind)
-
-colnames(out) = c("meanPAR", "dist_pctd_m")
-
-saupper100.proj <- cbind(saupper100.proj, out)
-
-#set max distance from acoustic mile to CTD, choosing 3 km here. Can be changed
-maxdist <- 3000
-saupper100.proj <- saupper100.proj %>% dplyr::filter(dist_pctd_m <=maxdist)
-
-```
-Here we assign light measurements from the CTD to the acoustic registrations of pelagic species, allowing a maximum distance between the CTD and acoustic registrations of `r maxdist` km. The total acoustic backscatter in the upper `r layerdepth` m of the water column in areas with bottom depth >= `r bottomdepth` m is then plotted against light level. Note that the colour gradient in the plot is not directly proportional to light level - it is only for illustrating the direction of change in the light variable.
-
-&nbsp;
-
-```{r, echo=FALSE, message=FALSE, fig.width=7.5, fig.height=4, out.width= "75%", warning=FALSE, fig.align="center"}
-#Plot
-
-#Code to make a gradient rectangle in the background of the plot to indicate light level
-
-#add variable for identifying species with no acoustic registrations, if any
-keep <- saupper100.proj %>% dplyr::group_by(variable) %>% dplyr::summarise(keep = sum(totSA) > 0)
-saupper100.proj <- left_join(saupper100.proj, keep)
-
-ggplot_grad_rects <- function(n, xmin, xmax) {
-  x_steps <- seq(from = xmin, to = xmax, length.out = n + 1)
-  alpha_steps <- seq(from = 0.9, to = 0, length.out = n)
-  rect_grad <- data.frame(xmin = x_steps[-(n + 1)], 
-                          xmax = x_steps[-1], 
-                          alpha = alpha_steps)
-
-  # rect_total <- merge(ctdac, rect_grad)
-  ggplot(saupper100.proj %>% dplyr::filter(variable == "Total")) +
-    geom_rect(data=rect_grad, 
-              aes(ymin=-Inf, ymax=Inf,
-                  xmin=xmin, xmax=xmax, 
-                  alpha=alpha), fill="midnightblue", color = NA) +
-    guides(alpha = FALSE)
-}
-
-ggplot_grad_rects(500, 0, max(saupper100.proj$meanPAR+1)) + 
-  geom_point(data = saupper100.proj %>% dplyr::filter(variable == "Total"), aes(x=meanPAR, y=totSA), alpha = 0.6, size = 3,shape = 21, fill="gold2", color="black") +
-  theme_bw()+facet_wrap(~variable, scales = "free_y")+
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
-  labs(x = bquote("Mean PAR irradiance upper" ~ .(layerdepth) ~ "m" ~ mu*"E/" ~ m^2*"s)"), 
-       y = expression("Integrated SA, upper 100 m (SA, "*m^2*"/"*nmi^2*")"), title = paste0("SA versus light level in the upper ",layerdepth," m layer in areas with bottom depth >= ",bottomdepth, " m"))
-```
-
-```{r, echo=FALSE, message=FALSE, fig.width=9, fig.height=5, out.width="87%", warning=FALSE, fig.align="center"}
-ggplot_grad_rects <- function(n, xmin, xmax) {
-  x_steps <- seq(from = xmin, to = xmax, length.out = n + 1)
-  alpha_steps <- seq(from = 0.9, to = 0, length.out = n)
-  rect_grad <- data.frame(xmin = x_steps[-(n + 1)], 
-                          xmax = x_steps[-1], 
-                          alpha = alpha_steps)
-
-  # rect_total <- merge(ctdac, rect_grad)
-  ggplot(saupper100.proj %>% dplyr::filter(variable %in% pelagics & keep ==TRUE)) +
-    geom_rect(data=rect_grad, 
-              aes(ymin=-Inf, ymax=Inf,
-                  xmin=xmin, xmax=xmax, 
-                  alpha=alpha), fill="midnightblue") +
-    guides(alpha = FALSE)
-}
-
-ggplot_grad_rects(500, 0, max(saupper100.proj$meanPAR+1)) + 
-  geom_point(data = saupper100.proj %>% dplyr::filter(variable %in% pelagics & keep ==TRUE), aes(x=meanPAR, y=totSA), alpha = 0.6, size = 2,shape = 21, fill="gold2", color="black") +
-  theme_bw()+facet_wrap(~variable, scales = "free_y")+
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())+
-  labs(x = bquote("Mean PAR irradiance upper" ~ .(layerdepth) ~ "m" ~ mu*"E/" ~ m^2*"s)"), 
-       y = expression("Integrated acoustic backscatter, upper 100 m (SA, "*m^2*"/"*nmi^2*")"), title = paste0("SA versus light level in the upper ",layerdepth," m layer in areas with bottom depth >= ",bottomdepth, " m"))
-```
 
 \pagebreak
 
-# Benthos
-
-- barplot large groups
-- map of total and/or selected groups?
-
-# Plankton
-
-- map of total? phytoplankton/zooplankton
-- krill/copedpods map?
-
-
-\pagebreak
 # Whales
 
 ## Positions of sightings by species
