@@ -119,8 +119,3 @@ Line numbers refer to the file *Report_BESS.Rmd*
 
 
 ---
-
-- info about cache=true, when you don't want to read in new data, just update other things
-in the file when you knit
-
-- info on how to adjust size of figures - width, height, out width, resolution, dpi
