@@ -99,7 +99,7 @@ ggplot(bath, aes(x=x, y=y))+
 
 ```
 \pagebreak
-```{r, echo = FALSE, message=FALSE, results='hide'}
+```{r, echo = FALSE, message=FALSE, results='hide', cache=TRUE}
 #Specify the location of files in your working directory
 test_schema <- "Data/Definitions/bioticv3.xsd"
 biotic_files <- "Data/Biotic"
@@ -664,7 +664,7 @@ ggplot(bath, aes(x=x, y=y))+
 
 ### Polar cod
 
-```{r, echo=FALSE, message=FALSE, fig.width=9, fig.height=3, warning=FALSE, out.width="90%", fig.align="center"}
+```{r, echo=FALSE, message=FALSE, fig.width=4.5, fig.height=3, warning=FALSE, out.width="50%", fig.align="left"}
 Title.on<-1            #1 for showing chart title, 0 for not showing it
 Bubble.size<-6        #Max size of bubbles in bubble plots
 
@@ -710,7 +710,7 @@ ggplot(bath, aes(x=x, y=y))+
 
 ### Blue whiting
 
-```{r, echo=FALSE, message=FALSE, fig.width=9, fig.height=3, warning=FALSE, out.width="90%", fig.align="center"}
+```{r, echo=FALSE, message=FALSE, fig.width=4.5, fig.height=3, warning=FALSE, out.width="50%", fig.align="left"}
 species <- "Micromesistius poutassou"
 
 Title=ifelse(Title.on==1,paste("Biomass","|",toString(Yr),"|",toString(species)),"")
@@ -870,7 +870,7 @@ ggplot(bath, aes(x=x, y=y))+
 
 ### Redfish
 
-```{r, echo=FALSE, message=FALSE, fig.width=9, fig.height=3, warning=FALSE, out.width="90%", fig.align="center"}
+```{r, echo=FALSE, message=FALSE, fig.width=6, fig.height=3, warning=FALSE, out.width="60%", fig.align="left"}
 species <- c("Sebastes viviparus", "Sebastes mentella", "Sebastes norvegicus")
 Title=ifelse(Title.on==1,paste("Biomass","|",toString(Yr),"|","Redfish species"),"")
 
@@ -890,7 +890,7 @@ ggplot(bath, aes(x=x, y=y))+
   labs(x = NULL, y = NULL, size = "Catch rate (kg/nmi)", title=Title)
 ```
 
-```{r, echo=FALSE, message=FALSE, fig.width=9, fig.height=3, warning=FALSE, out.width="90%", fig.align="center"}
+```{r, echo=FALSE, message=FALSE, fig.width=6, fig.height=3, warning=FALSE, out.width="60%", fig.align="left"}
 #number catches
 Title=ifelse(Title.on==1,paste("Number of individuals","|",toString(Yr),"|","Redfish species"),"")
 
@@ -961,30 +961,43 @@ ggplot(REF1cm, aes(length.cm, age))+geom_point(size = 0.5)+facet_wrap(~scientifi
 ```
 \pagebreak
 
-## GSI versus length and maturity stage
+## GSI versus maturity stage of female cod and haddock
 
-```{r, echo=FALSE, message=FALSE, fig.width=4, fig.height=2, out.width= "80%", warning=FALSE}
+```{r, echo=FALSE, message=FALSE, fig.width=6, fig.height=3, out.width= "70%", warning=FALSE}
 REF5cm$GSI <- (REF5cm$gonadweight/(REF5cm$individualweight-REF5cm$gonadweight))*100
 
-ggplot(REF5cm %>% dplyr::filter(commonname %in% c("torsk", "hyse") & !is.na(maturationstage)),
+ggplot(REF5cm %>% dplyr::filter(commonname %in% c("torsk", "hyse") & !is.na(maturationstage) & sex == "2"),
        aes(maturationstage, GSI))+geom_boxplot()+facet_wrap(~scientificname, scales = "free")+
   theme_bw()+labs(x = "Maturity stage", y = "GSI (%)")
 ```
 
-```{r, echo=FALSE, message=FALSE, fig.width=5, fig.height=2, out.width= "80%", warning=FALSE}
+\pagebreak
 
-ggplot(REF5cm %>% dplyr::filter(commonname %in% c("torsk", "hyse") & !is.na(maturationstage)),
-       aes(length.cm, GSI))+geom_point(aes(color = maturationstage), shape = 21)+facet_wrap(~scientificname, scales = "free")+
-  theme_bw()+labs(x = "Length (cm)", y = "GSI (%)")
-```
+## GSI versus length and maturity stage for female haddock
 
+The vertical line represents the size (40 cm) over which gonad samples should be taken if GSI < 2 % (horizontal line).
 
 ```{r, echo=FALSE, message=FALSE, fig.width=9, fig.height=6, out.width= "80%", warning=FALSE}
 
-ggplot(REF5cm %>% dplyr::filter(commonname == "hyse" & !is.na(maturationstage) & length.cm>=40),
+ggplot(REF5cm %>% dplyr::filter(commonname == "hyse" & !is.na(maturationstage) & sex == "2"),
        aes(length.cm, GSI))+geom_point(aes(color = maturationstage), shape = 3, size = 1, stroke = 1)+facet_wrap(~scientificname, scales = "free")+geom_abline(slope = 0, intercept = 2)+
+  geom_vline(xintercept = 40)+
   theme_bw()+labs(x = "Length (cm)", y = "GSI (%)")
 ```
+\pagebreak
+
+## GSI versus length and maturity stage for female cod
+
+The vertical line represents the size (60 cm) over which most females with GSI > 1.5 % (horizontal line) are maturing (Skjæraasen et al. 2012).
+
+```{r, echo=FALSE, message=FALSE, fig.width=9, fig.height=6, out.width= "80%", warning=FALSE}
+
+ggplot(REF5cm %>% dplyr::filter(commonname == "torsk" & !is.na(maturationstage) & sex == "2"),
+       aes(length.cm, GSI))+geom_point(aes(color = maturationstage), shape = 3, size = 1, stroke = 1)+facet_wrap(~scientificname, scales = "free")+geom_abline(slope = 0, intercept = 1.5)+
+  geom_vline(xintercept = 60)+
+  theme_bw()+labs(x = "Length (cm)", y = "GSI (%)")
+```
+
 \pagebreak
 
 # Acoustic registrations
@@ -1326,7 +1339,7 @@ ggplot(bath, aes(x=x, y=y))+
   geom_contour(aes(z=z), breaks=d.contours,colour="lightblue", size=0.5,show.legend = TRUE)+ 
   geom_contour(aes(z=z), breaks=c(0,1),color="darkgrey", size=.6) +
   geom_point(data=coord.track, aes(Lon.dd, Lat.dd, group = Date), alpha=0.1, colour="grey45", size=0.1, inherit.aes = F)+
-  geom_point(data=ctd.plot, aes(Lon, Lat, fill = mean_temp), size = 4, color="black", shape = 21)+
+  geom_point(data=ctd.plot, aes(Lon, Lat, fill = mean_temp), size = 2, color="black", shape = 21)+
   facet_wrap(~plotdepth)+
   scale_fill_distiller(palette="RdYlBu")+
   theme_bw()+
@@ -1341,7 +1354,7 @@ ggplot(bath, aes(x=x, y=y))+
   geom_contour(aes(z=z), breaks=d.contours,colour="lightblue", size=0.5,show.legend = TRUE)+ 
   geom_contour(aes(z=z), breaks=c(0,1),color="darkgrey", size=.6) +
  geom_point(data=coord.track, aes(Lon.dd, Lat.dd, group = Date), alpha=0.1, colour="grey45", size=0.1, inherit.aes = F)+
-  geom_point(data=ctd.plot, aes(Lon, Lat, fill = mean_salinity), size = 4, color="black", shape = 21)+
+  geom_point(data=ctd.plot, aes(Lon, Lat, fill = mean_salinity), size = 2, color="black", shape = 21)+
   facet_wrap(~plotdepth)+
   scale_fill_distiller(palette="BuPu", trans = "reverse", guide = guide_colorbar(reverse = T))+
   theme_bw()+
