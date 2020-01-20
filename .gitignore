@@ -40,6 +40,8 @@ rsconnect/
 
 #Ignore the raw data we use to plot
 Data/
+Report_Winter_Survey_cache
+Report_Winter_Survey_files
 
 #Ignore the HI logo file
 HI logo farger engelsk.jpg
