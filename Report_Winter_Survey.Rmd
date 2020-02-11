@@ -918,7 +918,7 @@ The following figures shows the length distribution of individuals sampled durin
 stasampindi <- right_join(stasamp,dd$individual)
 stasampindiage <- left_join(stasampindi, dd$agedetermination)
 
-#Kg -> g and m -> cm
+#Kg tinytex::tinytex_root()-> g and m -> cm
 stasampindiage$weight.g <- (stasampindiage$individualweight * 1000 )
 stasampindiage$length.cm <- (stasampindiage$length * 100 )
 

@@ -49,7 +49,7 @@ Collect the following cruise data from the server on board:
    PHYSICS/CTD/CTD_DATA/
    + Place in "CTD" folder.
 
-4. Definitions: These are files used for reading the biotic xlm-data. Download them from https://github.com/Sea2Data/cruisetools and place in folder "Definitions".
+4. Definitions: These are files used for reading the biotic xlm-data. Download them from https://github.com/jofall/Cruisenotebook and place in folder "Definitions".
 
 5. Map data: depth contours for plotting. Download the file *ETOPO1_nm4.csv* from the github repository and place in folder "GeoData".
 
