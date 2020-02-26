@@ -35,3 +35,5 @@ HI logo farger engelsk.jpg
 # Ignore the word doc detailing future updates
 Oppdateringer av Cruisenotebook.docx
 ~$pdateringer av Cruisenotebook.docx
+# ignore wip script
+create loop for spatial plots.R
