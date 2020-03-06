@@ -22,7 +22,7 @@ classoption: landscape
 knitr::opts_chunk$set(echo = TRUE, dpi = 220, dev = "CairoPNG")
 ```
 
-```{r, echo=FALSE, message=FALSE}
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
 #Load required packages
 Packages <- c("plyr","tidyverse", "data.table", "XML", "reshape2", 
               "chron", "proj4", "readxl", "Cairo", "bookdown")
@@ -41,8 +41,8 @@ Cruise tracks from the position log with points indicating start positions for d
 bath1<-read_csv(file = "Data/GeoData/ETOPO1_nm4.csv")
 
 # Define map extent and depth contours
-Ylim<-c(70,76)        #latitude
-Xlim<-c(8, 55)         #longitude
+Ylim<-c(70,74.5)        #latitude
+Xlim<-c(16, 28.5)         #longitude
 d.contours<-c(-100, -300,-500)   #Depth contours for plot with bathymetry
 
 #reduce the resolution of depth contours (to increase speed when writing to file)
@@ -78,8 +78,7 @@ for (i in 1:length(file_list)){
 #Name the gears
 dataset$gear.text <- NA
 dataset$gear.text[dataset$`Station type` == "Bottom trawl start"] <- "Bottom trawl"
-dataset$gear.text[dataset$`Station type` == "Pelagic trawl start" & dataset$Code %in% c("3513","3514")] <- "Pelagic trawl"
-dataset$gear.text[dataset$Code == "3532" & dataset$`Station type` == "Pelagic trawl start"] <- "Trawling on registration"
+dataset$gear.text[dataset$`Station type` == "Pelagic trawl start" & dataset$Code %in% c("3513","3514", "3592")] <- "Pelagic trawl"
 dataset$gear.text[dataset$`Station type` %in% c("CTD with watersample start", "CTD start")] <- "CTD"
 dataset$gear.text[dataset$`Station type` == "Håv-trekk stasjon.start"] <- "WP2"
 
@@ -99,7 +98,7 @@ ggplot(bath, aes(x=x, y=y))+
 
 ```
 \pagebreak
-```{r, echo = FALSE, message=FALSE, results='hide', cache=TRUE}
+```{r, echo = FALSE, message=FALSE, results='hide', cache=FALSE}
 #Specify the location of files in your working directory
 test_schema <- "Data/Definitions/bioticv3.xsd"
 biotic_files <- "Data/Biotic"
@@ -622,7 +621,7 @@ Bubble.size<-6        #Max size of bubbles in bubble plots
 
 species <- "Mallotus villosus"
 
-Yr <- c(2019)
+Yr <- format(Sys.time(), "%Y")
 
 Title=ifelse(Title.on==1,paste("Biomass","|",toString(Yr),"|",toString(species)),"")
 
@@ -670,7 +669,7 @@ Bubble.size<-6        #Max size of bubbles in bubble plots
 
 species <- "Boreogadus saida"
 
-Yr <- c(2019)
+Yr <- format(Sys.time(), "%Y")
 
 Title=ifelse(Title.on==1,paste("Biomass","|",toString(Yr),"|",toString(species)),"")
 
@@ -1035,12 +1034,11 @@ A total of `r (round((sum(acu.dat$LOGSTOP[acu.dat$LOGSTOP>5000]-acu.dat$LOGSTART
 Bubble.size<-9        #Max size of bubbles in bubble plots
 
 ### Selection variables
-Year <- 2019 
-#format(Sys.time(), "%Y")
+Year <- format(Sys.time(), "%Y")
 Frequency<-c(38000)         #c(3800,120000) c(120000)  - NULL=all frequencies
 
 #Select all species, and the total, and the 38 kHz frequency (in case there are other frequencies in the file)
-acu.dat.spec<- select(acu.dat,YEAR,FREQUENCY,LONGITUDE,LATITUDE, c(13:ncol(acu.dat)))    
+acu.dat.spec<- select(acu.dat,YEAR,FREQUENCY,LONGITUDE,LATITUDE, c(13:ncol(acu.dat)))
 if(is.null(Year)==FALSE)
   acu.dat.map<-acu.dat.spec %>% filter(YEAR%in%Year)
 if(is.null(Frequency)==FALSE)
@@ -1052,18 +1050,18 @@ acu.dat.map.melt <- reshape2::melt(acu.dat.map, id.vars = c(1:4))
 #Change the names of acoustic categories
 labls <- c("Other","Plankton", "Capelin", "Haddock","Cod", "Total") #herring? NB check order in output!!
 
-acu.dat.map.melt$variable <- factor(acu.dat.map.melt$variable, 
+acu.dat.map.melt$variable <- factor(acu.dat.map.melt$variable,
                                     levels = c(paste(names(acu.dat.map)[5:ncol(acu.dat.map)])),
                                     labels = labls)
 
-# Plot title 
+# Plot title
 Yr <- sort(unique(acu.dat.map$YEAR))
 Fr <- sort(unique(acu.dat.map$FREQUENCY))/1000
 Title=ifelse(Title.on==1,paste("Winter survey Johan Hjort","|",toString(Yr),"|",toString(Fr),"kHz"), "")
 
 #Plot total acoustic backscatter
 ggplot(bath, aes(x=x, y=y))+
-  geom_contour(aes(z=z), breaks=d.contours,colour="lightblue", size=0.5,show.legend = TRUE)+ 
+  geom_contour(aes(z=z), breaks=d.contours,colour="lightblue", size=0.5,show.legend = TRUE)+
   geom_contour(aes(z=z), breaks=c(0,1),color="darkgrey", size=.6) + #for coastline only as line, activate this and skip geom_polygon
   geom_point(data=acu.dat.map.melt %>% dplyr::filter(variable == "Total"),
              aes(LONGITUDE,LATITUDE,size = value),shape=21, alpha = 0.3, colour = "black",fill="orange",stroke = .2)+
@@ -1084,7 +1082,7 @@ ggplot(bath, aes(x=x, y=y))+
 pelagics <- c("Plankton","Capelin") #+herring?
 
 ggplot(bath, aes(x=x, y=y))+
-  geom_contour(aes(z=z), breaks=d.contours,colour="lightblue", size=0.5,show.legend = TRUE)+ 
+  geom_contour(aes(z=z), breaks=d.contours,colour="lightblue", size=0.5,show.legend = TRUE)+
   geom_contour(aes(z=z), breaks=c(0,1),color="darkgrey", size=.6) + #for coastline only as line, activate this and skip geom_polygon
   geom_point(data=acu.dat.map.melt %>% dplyr::filter(variable %in% pelagics),
              aes(LONGITUDE,LATITUDE,size = value),shape=21, alpha = 0.3, colour = "black",fill="orange",stroke = .2)+
@@ -1104,7 +1102,7 @@ ggplot(bath, aes(x=x, y=y))+
 demersals <- c("Cod", "Haddock")
 
 ggplot(bath, aes(x=x, y=y))+
-  geom_contour(aes(z=z), breaks=d.contours,colour="lightblue", size=0.5,show.legend = TRUE)+ 
+  geom_contour(aes(z=z), breaks=d.contours,colour="lightblue", size=0.5,show.legend = TRUE)+
   geom_contour(aes(z=z), breaks=c(0,1),color="darkgrey", size=.6) + #for coastline only as line, activate this and skip geom_polygon
   geom_point(data=acu.dat.map.melt %>% dplyr::filter(variable %in% demersals),
              aes(LONGITUDE,LATITUDE,size = value),shape=21, alpha = 0.3, colour = "black",fill="orange",stroke = .2)+
@@ -1141,14 +1139,14 @@ acu.ch.sun$min <- as.numeric(acu.ch.sun$min)
 acu.ch.sun$sec <- as.numeric(acu.ch.sun$min)
 
 #function for calculating solar elevation angle from geographical position and time of day
-alt.of.sun <- function(min=x$min, hour=x$hour, day=x$DA, month=x$MO, 
+alt.of.sun <- function(min=x$min, hour=x$hour, day=x$DA, month=x$MO,
                        lat=x$LATITUDE, lon=x$LONGITUD){
   # altitude of sun
   UTC <- hour + min/60
   CET <- (UTC + 1) %% 24
   dayadd <- cumsum(c(0,31,28,31,30,31,30,31,31,30,31,30,31))
   cumday <- day + dayadd[month]
-  K1 <- (lon - 15 - 0.4083 * sin(0.0172 * (cumday-80)) 
+  K1 <- (lon - 15 - 0.4083 * sin(0.0172 * (cumday-80))
          - 1.7958 * cos(0.0172 * (cumday-80))
          + 2.4875 * sin(0.0344 * (cumday-80)))
   SST <- ((CET*15) + K1) / (180/pi)
@@ -1157,7 +1155,7 @@ alt.of.sun <- function(min=x$min, hour=x$hour, day=x$DA, month=x$MO,
   Brq <- lat/(180/pi)
   sinush <- (sin(dkl)*sin(Brq)) - (cos(dkl)*cos(Brq)*cos(SST))
   alt.of.sun <- asin(sinush) * (180/pi)
-  
+
   # time when altitude of sun = asun.0
   asun.0 <- 0
   K2 <- (sin(dkl)*sin(Brq) - sin(asun.0/(180/pi))) / (cos(dkl)*cos(Brq))
@@ -1185,16 +1183,16 @@ acu.ch.sun$TOD[acu.ch.sun$sunheight-acu.ch.sun$sunrise>0] <- "Day"
 acu.ch.melt <- melt(acu.ch.sun, id.vars = c(1:16,(ncol(acu.ch)+1):ncol(acu.ch.sun)))
 
 #calculate mean depths weighted by SA for each position and category
-acu.wmean <- acu.ch.melt %>% dplyr::group_by(LONGITUD, LATITUDE,TOD,BDMIN, BDMAX, 
-                                      corr.sun = sunheight-sunrise,variable) %>% 
+acu.wmean <- acu.ch.melt %>% dplyr::group_by(LONGITUD, LATITUDE,TOD,BDMIN, BDMAX,
+                                      corr.sun = sunheight-sunrise,variable) %>%
   dplyr::summarise(wdepth = weighted.mean(PDMEAN, w = value)) %>% data.frame()
 
 #change category names
-acu.wmean$variable <- factor(acu.wmean$variable, 
+acu.wmean$variable <- factor(acu.wmean$variable,
                                     levels = c(paste(names(acu.ch)[17:ncol(acu.ch)])),
                                     labels = labls)
 
-#Here is code for two different plots; 
+#Here is code for two different plots;
 #1) the depth of acoustic registrations - most relevant for species with diel vertical migration, where the light level is proportional to the depth they occupy
 #2) the distance of acoustic registrations to the seafloor, or in cases when the bottom depth is > 600 m, the distance to the maximum scrutinized depth - may be relevant for looking at the depth distribution of demersal species
 
@@ -1206,7 +1204,7 @@ ggplot(acu.wmean %>% dplyr::filter(variable %in% pelagics),
   facet_wrap(~variable)+ coord_flip()+scale_x_continuous(limits=c(0,max(acu.wmean$wdepth, na.rm=T)+20))+
   scale_x_reverse()+
   scale_fill_viridis_d(name="Time of day", direction = -1)+theme_bw()+
-  labs(y = "Number of observations (scrutinized nmi)", 
+  labs(y = "Number of observations (scrutinized nmi)",
        x = "Weighted depth of acoustic backscatter (m)", title = "Pelagic species")
 ```
 
@@ -1219,7 +1217,7 @@ ggplot(acu.wmean %>% dplyr::filter(variable %in% demersals),
   facet_wrap(~variable)+ coord_flip()+scale_x_continuous(limits=c(0,max(acu.wmean$wdepth, na.rm=T)+20))+
   scale_x_reverse()+
   scale_fill_viridis_d(name="Time of day", direction = -1)+theme_bw()+
-  labs(y = "Number of observations (scrutinized nmi)", 
+  labs(y = "Number of observations (scrutinized nmi)",
        x = "Weighted depth of acoustic backscatter (m)", title = "Demersal species")
 ```
 
@@ -1230,11 +1228,11 @@ ggplot(acu.wmean %>% dplyr::filter(variable %in% demersals),
 ```{r, echo=FALSE,eval=F, message=FALSE, fig.width=8, fig.height=4, out.width= "90%", warning=FALSE, fig.align="center"}
 ggplot(acu.wmean %>% dplyr::filter(variable %in% pelagics),
        aes(BDMAX-wdepth))+
-  geom_histogram(aes(fill=TOD), position="dodge", binwidth = 20)+ 
+  geom_histogram(aes(fill=TOD), position="dodge", binwidth = 20)+
   facet_wrap(~variable) + coord_flip() +
   scale_x_continuous(limits=c(0,max(acu.wmean$BDMAX-acu.wmean$wdepth, na.rm=T)+20)) +
   scale_fill_viridis_d(name="Time of day", direction = -1) + theme_bw()+
-  labs(y = "Number of observations (scrutinized nmi)", 
+  labs(y = "Number of observations (scrutinized nmi)",
        x = "Distance to max scutinized depth (m)", title = "Pelagic species")
 ```
 
@@ -1242,11 +1240,11 @@ ggplot(acu.wmean %>% dplyr::filter(variable %in% pelagics),
 ```{r, echo=FALSE,eval=F, message=FALSE, fig.width=8, fig.height=4, out.width= "90%", warning=FALSE, fig.align="center"}
 ggplot(acu.wmean %>% dplyr::filter(variable %in% demersals),
        aes(BDMAX-wdepth))+
-  geom_histogram(aes(fill=TOD), position="dodge", binwidth = 20)+ 
+  geom_histogram(aes(fill=TOD), position="dodge", binwidth = 20)+
   facet_wrap(~variable) + coord_flip() +
   scale_x_continuous(limits=c(0,max(acu.wmean$BDMAX-acu.wmean$wdepth, na.rm=T)+20)) +
   scale_fill_viridis_d(name="Time of day", direction = -1) + theme_bw()+
-  labs(y = "Number of observations (scrutinized nmi)", 
+  labs(y = "Number of observations (scrutinized nmi)",
        x = "Distance to max scutinized depth (m)", title = "Demersal species")
 ```
 
