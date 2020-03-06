@@ -965,7 +965,7 @@ ggplot(REF1cm, aes(length.cm, age))+geom_point(size = 0.5)+facet_wrap(~scientifi
 ```{r, echo=FALSE, message=FALSE, fig.width=6, fig.height=3, out.width= "70%", warning=FALSE}
 REF5cm$GSI <- (REF5cm$gonadweight/(REF5cm$individualweight-REF5cm$gonadweight))*100
 
-ggplot(REF5cm %>% dplyr::filter(commonname %in% c("torsk", "hyse") & !is.na(maturationstage) & sex == "2"),
+ggplot(REF5cm %>% dplyr::filter(commonname %in% c("torsk", "hyse") & !is.na(maturationstage) & sex == "1"),
        aes(maturationstage, GSI))+geom_boxplot()+facet_wrap(~scientificname, scales = "free")+
   theme_bw()+labs(x = "Maturity stage", y = "GSI (%)")
 ```
@@ -978,7 +978,7 @@ The vertical line represents the size (40 cm) over which gonad samples should be
 
 ```{r, echo=FALSE, message=FALSE, fig.width=9, fig.height=6, out.width= "80%", warning=FALSE}
 
-ggplot(REF5cm %>% dplyr::filter(commonname == "hyse" & !is.na(maturationstage) & sex == "2"),
+ggplot(REF5cm %>% dplyr::filter(commonname == "hyse" & !is.na(maturationstage) & sex == "1"),
        aes(length.cm, GSI))+geom_point(aes(color = maturationstage), shape = 3, size = 1, stroke = 1)+facet_wrap(~scientificname, scales = "free")+geom_abline(slope = 0, intercept = 2)+
   geom_vline(xintercept = 40)+
   theme_bw()+labs(x = "Length (cm)", y = "GSI (%)")
@@ -991,7 +991,7 @@ The vertical line represents the size (60 cm) over which most females with GSI >
 
 ```{r, echo=FALSE, message=FALSE, fig.width=9, fig.height=6, out.width= "80%", warning=FALSE}
 
-ggplot(REF5cm %>% dplyr::filter(commonname == "torsk" & !is.na(maturationstage) & sex == "2"),
+ggplot(REF5cm %>% dplyr::filter(commonname == "torsk" & !is.na(maturationstage) & sex == "1"),
        aes(length.cm, GSI))+geom_point(aes(color = maturationstage), shape = 3, size = 1, stroke = 1)+facet_wrap(~scientificname, scales = "free")+geom_abline(slope = 0, intercept = 1.5)+
   geom_vline(xintercept = 60)+
   theme_bw()+labs(x = "Length (cm)", y = "GSI (%)")
