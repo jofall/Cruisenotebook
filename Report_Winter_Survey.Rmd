@@ -41,8 +41,8 @@ Cruise tracks from the position log with points indicating start positions for d
 bath1<-read_csv(file = "Data/GeoData/ETOPO1_nm4.csv")
 
 # Define map extent and depth contours
-Ylim<-c(70,74.5)        #latitude
-Xlim<-c(16, 28.5)         #longitude
+Ylim<-c(70,76)        #latitude
+Xlim<-c(8, 55)         #longitude
 d.contours<-c(-100, -300,-500)   #Depth contours for plot with bathymetry
 
 #reduce the resolution of depth contours (to increase speed when writing to file)
