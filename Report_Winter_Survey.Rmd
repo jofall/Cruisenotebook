@@ -613,174 +613,123 @@ ggplot(tst %>% dplyr::filter(gear.text == gear & !is.na(scientificname) & !scien
 
 ## Spatial variation in catches of common species
 
-### Capelin
+```{r,echo=FALSE, message=FALSE}
+my_plot_hook <- function(x, options)
+  paste("\n", knitr::hook_plot_tex(x, options), "\n")
+knitr::knit_hooks$set(plot = my_plot_hook)
+```
 
-```{r, echo=FALSE, message=FALSE, fig.width=9, fig.height=3, warning=FALSE, out.width="90%", fig.align="center"}
-Title.on<-1            #1 for showing chart title, 0 for not showing it
-Bubble.size<-6        #Max size of bubbles in bubble plots
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 9, fig.height = 3, out.width="85%"}
+#Select which species you want to plot
+species <- c("Gadus morhua", "Melanogrammus aeglefinus", "Mallotus villosus", "Boreogadus saida",
+             "Micromesistius poutassou", "Clupea harengus", "Sebastes mentella", 
+             "Hippoglossoides platessoides")
 
-species <- "Mallotus villosus"
-
-Yr <- format(Sys.time(), "%Y")
-
-Title=ifelse(Title.on==1,paste("Biomass","|",toString(Yr),"|",toString(species)),"")
-
-#coordinates for ship track
+#Get coordinates for ship track
 coord.track <- dataset %>% dplyr::select(Date,Log, Lon.dd, Lat.dd) %>% data.frame()
 
-#Catch rate kg/nmi
-ggplot(bath, aes(x=x, y=y))+
-  geom_contour(aes(z=z), breaks=d.contours,colour="lightblue", size=0.5,show.legend = TRUE)+ 
-  geom_contour(aes(z=z), breaks=c(0,1),color="darkgrey", size=.6) + #for coastline only as line, activate this and skip geom_polygon
-  geom_point(data=coord.track, aes(Lon.dd, Lat.dd, group = Date), alpha=0.1, colour="grey65", size=0.1, inherit.aes = F)+
-  geom_point(data=stasamp %>% dplyr::filter(scientificname == species),aes(longitudestart,latitudestart,size = cr.kg.nm),
-             shape=21, alpha = 0.7, colour = "black",fill = "orange", stroke = .2)+
-    facet_grid(~gear.text)+
- # geom_path(data=stasamp.map,aes(longitudestart,latitudestart), linejoin="round",lineend="square",alpha=0.4,colour="black",size=0.4)+
-  scale_size_area(max_size=Bubble.size)+
-  theme_bw()+
-  coord_cartesian(xlim = Xlim,ylim = Ylim)+
-  labs(x = NULL, y = NULL, size = "Catch rate (kg/nmi)", title=Title)
+#Set max size of bubbles in bubble plots
+Bubble.size<-6       
+
+#Select plot types (none, one or both)
+numplot <- 0 #do you want to plot catches in numbers/nmi?
+bioplot <- 1 #do you want to plot catches in kg/nmi?
+
+for(i in 1:length(species)) {
+  if (numplot == 1) {
+    Title = paste("Catch rate (number of individuals)", "|", toString(format(Sys.Date(), "%Y")),
+                  "|", toString(species[i]))
+    g <- ggplot(bath, aes(x = x, y = y)) +
+      geom_contour(
+        aes(z = z),
+        breaks = d.contours,
+        colour = "lightblue",
+        size = 0.5,
+        show.legend = TRUE
+      ) +
+      geom_contour(aes(z = z),
+                   breaks = c(0, 1),
+                   color = "darkgrey",
+                   size = .6) +
+      geom_point(
+        data = coord.track,
+        aes(Lon.dd, Lat.dd, group = Date),
+        alpha = 0.1,
+        colour = "grey65",
+        size = 0.1,
+        inherit.aes = F
+      ) +
+      geom_point(
+        data = stasamp %>% dplyr::filter(scientificname == species[i]),
+        aes(longitudestart, latitudestart, size = cr.n.nm),
+        shape = 21,
+        alpha = 0.7,
+        colour = "black",
+        fill = "orange",
+        stroke = .2
+      ) +
+      facet_grid( ~ gear.text) +
+      scale_size_area(max_size = Bubble.size) +
+      theme_bw() +
+      coord_cartesian(xlim = Xlim, ylim = Ylim) +
+      labs(
+        x = NULL,
+        y = NULL,
+        size = "Catch rate (N/nmi)",
+        title = Title
+      )
+    print(g)
+    
+  }
+  if (bioplot == 1) {
+    Title = paste("Catch rate (biomass)", "|", toString(format(Sys.Date(), "%Y")),
+                  "|", toString(species[i]))
+    #Catch rate kg/nmi
+    h <- ggplot(bath, aes(x = x, y = y)) +
+      geom_contour(
+        aes(z = z),
+        breaks = d.contours,
+        colour = "lightblue",
+        size = 0.5,
+        show.legend = TRUE
+      ) +
+      geom_contour(aes(z = z),
+                   breaks = c(0, 1),
+                   color = "darkgrey",
+                   size = .6) +
+      geom_point(
+        data = coord.track,
+        aes(Lon.dd, Lat.dd, group = Date),
+        alpha = 0.1,
+        colour = "grey65",
+        size = 0.1,
+        inherit.aes = F
+      ) +
+      geom_point(
+        data = stasamp %>% dplyr::filter(scientificname == species[i]),
+        aes(longitudestart, latitudestart, size = cr.kg.nm),
+        shape = 21,
+        alpha = 0.7,
+        colour = "black",
+        fill = "orange",
+        stroke = .2
+      ) +
+      facet_grid( ~ gear.text) +
+      scale_size_area(max_size = Bubble.size) +
+      theme_bw() +
+      coord_cartesian(xlim = Xlim, ylim = Ylim) +
+      labs(
+        x = NULL,
+        y = NULL,
+        size = "Catch rate (kg/nmi)",
+        title = Title
+      )
+    print(h)
+  }
+}
 ```
 
-### Polar cod
-
-```{r, echo=FALSE, message=FALSE, fig.width=6, fig.height=4, warning=FALSE, out.width="60%", fig.align="left"}
-Title.on<-1            #1 for showing chart title, 0 for not showing it
-Bubble.size<-6        #Max size of bubbles in bubble plots
-
-species <- "Boreogadus saida"
-
-Yr <- format(Sys.time(), "%Y")
-
-Title=ifelse(Title.on==1,paste("Biomass","|",toString(Yr),"|",toString(species)),"")
-
-#Catch rate kg/nmi
-ggplot(bath, aes(x=x, y=y))+
-  geom_contour(aes(z=z), breaks=d.contours,colour="lightblue", size=0.5,show.legend = TRUE)+ 
-  geom_contour(aes(z=z), breaks=c(0,1),color="darkgrey", size=.6) + #for coastline only as line, activate this and skip geom_polygon
-  geom_point(data=coord.track, aes(Lon.dd, Lat.dd, group = Date), alpha=0.1,
-             colour="grey65", size=0.1, inherit.aes = F)+
-  geom_point(data=stasamp %>% dplyr::filter(scientificname == species),aes(longitudestart,latitudestart,size = cr.kg.nm),
-             shape=21, alpha = 0.7, colour = "black",fill = "orange", stroke = .2)+
-    facet_grid(~gear.text)+
- # geom_path(data=stasamp.map,aes(longitudestart,latitudestart), linejoin="round",lineend="square",alpha=0.4,colour="black",size=0.4)+
-  scale_size_area(max_size=Bubble.size)+
-  theme_bw()+
-  coord_cartesian(xlim = Xlim,ylim = Ylim)+
-  labs(x = NULL, y = NULL, size = "Catch rate (kg/nmi)", title=Title)
-```
-
-### Blue whiting
-
-```{r, echo=FALSE, message=FALSE, fig.width=9, fig.height=3, warning=FALSE, out.width="90%", fig.align="left"}
-species <- "Micromesistius poutassou"
-
-Title=ifelse(Title.on==1,paste("Biomass","|",toString(Yr),"|",toString(species)),"")
-
-#Catch rate kg/nmi 
-ggplot(bath, aes(x=x, y=y))+
-  geom_contour(aes(z=z), breaks=d.contours,colour="lightblue", size=0.5,show.legend = TRUE)+ 
-  geom_contour(aes(z=z), breaks=c(0,1),color="darkgrey", size=.6) + #for coastline only as line, activate this and skip geom_polygon
-  geom_point(data=coord.track, aes(Lon.dd, Lat.dd, group = Date), alpha=0.1,
-             colour="grey65", size=0.1, inherit.aes = F)+
-  geom_point(data=stasamp %>% dplyr::filter(scientificname == species),aes(longitudestart,latitudestart,size = cr.kg.nm),
-             shape=21, alpha = 0.7, colour = "black",fill = "orange", stroke = .2)+
-  facet_grid(~gear.text)+
- # geom_path(data=stasamp.map,aes(longitudestart,latitudestart), linejoin="round",lineend="square",alpha=0.4,colour="black",size=0.4)+
-  scale_size_area(max_size=Bubble.size)+
-  theme_bw()+
-  coord_cartesian(xlim = Xlim,ylim = Ylim)+
-  labs(x = NULL, y = NULL, size = "Catch rate (kg/nmi)", title=Title)
-```
-
-### Herring
-
-```{r, echo=FALSE, message=FALSE, fig.width=9, fig.height=3, warning=FALSE, out.width="90%", fig.align="center"}
-species <- "Clupea harengus" #for species caught in 2 out of 3 gears (figure size is adjusted)
-
-Title=ifelse(Title.on==1,paste("Biomass","|",toString(Yr),"|",toString(species)),"")
-
-#Catch rate kg/nmi 
-ggplot(bath, aes(x=x, y=y))+
-  geom_contour(aes(z=z), breaks=d.contours,colour="lightblue", size=0.5,show.legend = TRUE)+ 
-  geom_contour(aes(z=z), breaks=c(0,1),color="darkgrey", size=.6) +
-  geom_point(data=coord.track, aes(Lon.dd, Lat.dd, group = Date), alpha=0.1, colour="grey65", size=0.1, inherit.aes = F)+
-  geom_point(data=stasamp %>% dplyr::filter(scientificname == species),aes(longitudestart,latitudestart,size = cr.kg.nm),
-             shape=21, alpha = 0.7, colour = "black",fill = "orange", stroke = .2)+
-    facet_grid(~gear.text)+
- # geom_path(data=stasamp.map,aes(longitudestart,latitudestart), linejoin="round",lineend="square",alpha=0.4,colour="black",size=0.4)+
-  scale_size_area(max_size=Bubble.size)+
-  theme_bw()+
-  coord_cartesian(xlim = Xlim,ylim = Ylim)+
-  labs(x = NULL, y = NULL, size = "Catch rate (kg/nmi)", title=Title)
-```
-
-### Haddock
-
-```{r, echo=FALSE, message=FALSE, fig.width=6, fig.height=4, warning=FALSE, out.width="60%", fig.align="center"}
-species <- "Melanogrammus aeglefinus"
-
-Title=ifelse(Title.on==1,paste("Biomass","|",toString(Yr),"|",toString(species)),"")
-
-#Catch rate kg/nmi 
-ggplot(bath, aes(x=x, y=y))+
-  geom_contour(aes(z=z), breaks=d.contours,colour="lightblue", size=0.5,show.legend = TRUE)+ 
-  geom_contour(aes(z=z), breaks=c(0,1),color="darkgrey", size=.6) + 
-  geom_point(data=coord.track, aes(Lon.dd, Lat.dd, group = Date), alpha=0.1, colour="grey65", size=0.1, inherit.aes = F)+
-  geom_point(data=stasamp %>% dplyr::filter(scientificname == species),aes(longitudestart,latitudestart,size = cr.kg.nm),
-             shape=21, alpha = 0.7, colour = "black",fill = "orange", stroke = .2)+
-    facet_grid(~gear.text)+
- # geom_path(data=stasamp.map,aes(longitudestart,latitudestart), linejoin="round",lineend="square",alpha=0.4,colour="black",size=0.4)+
-  scale_size_area(max_size=Bubble.size)+
-  theme_bw()+
-  coord_cartesian(xlim = Xlim,ylim = Ylim)+
-  labs(x = NULL, y = NULL, size = "Catch rate (kg/nmi)", title=Title)
-```
-
-### Cod
-
-```{r, echo=FALSE, message=FALSE, fig.width=9, fig.height=3, warning=FALSE, out.width="90%", fig.align="center"}
-species <- "Gadus morhua"
-
-Title=ifelse(Title.on==1,paste("Biomass","|",toString(Yr),"|",toString(species)),"")
-
-#Catch rate kg/nmi 
-ggplot(bath, aes(x=x, y=y))+
-  geom_contour(aes(z=z), breaks=d.contours,colour="lightblue", size=0.5,show.legend = TRUE)+ 
-  geom_contour(aes(z=z), breaks=c(0,1),color="darkgrey", size=.6) + 
-  geom_point(data=coord.track, aes(Lon.dd, Lat.dd, group = Date), alpha=0.1, colour="grey65", size=0.1, inherit.aes = F)+
-  geom_point(data=stasamp %>% dplyr::filter(scientificname == species),aes(longitudestart,latitudestart,size = cr.kg.nm),
-             shape=21, alpha = 0.7, colour = "black",fill = "orange", stroke = .2)+
-    facet_grid(~gear.text)+
- # geom_path(data=stasamp.map,aes(longitudestart,latitudestart), linejoin="round",lineend="square",alpha=0.4,colour="black",size=0.4)+
-  scale_size_area(max_size=Bubble.size)+
-  theme_bw()+
-  coord_cartesian(xlim = Xlim,ylim = Ylim)+
-  labs(x = NULL, y = NULL, size = "Catch rate (kg/nmi)", title=Title)
-```
-
-### Redfish
-
-```{r, echo=FALSE, message=FALSE, fig.width=9, fig.height=3, warning=FALSE, out.width="90%", fig.align="left"}
-species <- c("Sebastes viviparus", "Sebastes mentella", "Sebastes norvegicus")
-Title=ifelse(Title.on==1,paste("Biomass","|",toString(Yr),"|","Redfish species"),"")
-
-#Catch rate kg/nmi
-ggplot(bath, aes(x=x, y=y))+
-  geom_contour(aes(z=z), breaks=d.contours,colour="lightblue", size=0.5,show.legend = TRUE)+ 
-  geom_contour(aes(z=z), breaks=c(0,1),color="darkgrey", size=.6) + 
-  geom_point(data=coord.track, aes(Lon.dd, Lat.dd, group = Date), alpha=0.1, colour="grey65", size=0.1, inherit.aes = F)+
-  geom_jitter(data=stasamp %>% dplyr::filter(scientificname %in% species),aes(longitudestart,latitudestart,size = cr.kg.nm, fill=scientificname),
-             shape=21, alpha = 0.8, stroke = .2, color="black")+
-    facet_grid(~gear.text)+
-  scale_fill_viridis_d(name= "Species", direction = -1)+
- # geom_path(data=stasamp.map,aes(longitudestart,latitudestart), linejoin="round",lineend="square",alpha=0.4,colour="black",size=0.4)+
-  scale_size_area(max_size=Bubble.size)+
-  theme_bw()+
-  coord_cartesian(xlim = Xlim,ylim = Ylim)+
-  labs(x = NULL, y = NULL, size = "Catch rate (kg/nmi)", title=Title)
-```
+\pagebreak
 
 ## Length distributions
 
@@ -930,7 +879,7 @@ acu.dat.map.melt$variable <- factor(acu.dat.map.melt$variable,
 # Plot title
 Yr <- sort(unique(acu.dat.map$YEAR))
 Fr <- sort(unique(acu.dat.map$FREQUENCY))/1000
-Title=ifelse(Title.on==1,paste("Winter survey Johan Hjort","|",toString(Yr),"|",toString(Fr),"kHz"), "")
+Title=paste("Winter survey Johan Hjort","|",toString(Yr),"|",toString(Fr),"kHz")
 
 #Plot total acoustic backscatter
 ggplot(bath, aes(x=x, y=y))+
