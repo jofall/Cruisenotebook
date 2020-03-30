@@ -9,10 +9,6 @@ output:
     extra_dependencies: flafter
     toc: yes
     toc_depth: 3
-  html_document:
-    df_print: paged
-    toc: yes
-    toc_depth: '3'
 classoption: landscape
 ---
 \fontsize{12}{18}
@@ -22,7 +18,7 @@ classoption: landscape
 knitr::opts_chunk$set(echo = TRUE, dpi = 220, dev = "CairoPNG")
 ```
 
-```{r, echo=FALSE, message=FALSE, warning=FALSE}
+```{r load packages, echo=FALSE, message=FALSE, warning=FALSE}
 #Load required packages
 Packages <- c("plyr","tidyverse", "data.table", "XML", "reshape2", 
               "chron", "proj4", "readxl", "Cairo", "bookdown")
@@ -35,7 +31,7 @@ invisible(lapply(X = Packages,FUN = library, character.only = TRUE))
 
 Cruise tracks from the position log with points indicating start positions for different sampling gear. The points are jittered slightly for better visual representation:
 
-```{r, echo=FALSE, message=FALSE, fig.width=9, fig.height=5, out.width= "75%", fig.align="center"}
+```{r plot cruise tracks and stations, echo=FALSE, message=FALSE, fig.width=9, fig.height=5, out.width= "75%", fig.align="center"}
 
 # Get bathymetry data from file
 bath1<-read_csv(file = "Data/GeoData/ETOPO1_nm4.csv")
@@ -89,7 +85,7 @@ dataset$gear.text[dataset$`Station type` == "Håv-trekk stasjon.start"] <- "WP2"
 ggplot(bath, aes(x=x, y=y))+
   geom_contour(aes(z=z), breaks=d.contours,colour="lightblue", size=0.5,show.legend = TRUE)+ 
   geom_contour(aes(z=z), breaks=c(0,1),color="darkgrey", size=.6) +
-  geom_point(data=dataset %>% dplyr::filter(is.na(gear.text)), aes(Lon.dd, Lat.dd, group = Date), alpha=0.25, colour="grey45", size=0.1, inherit.aes = F)+
+  geom_point(data=dataset %>% dplyr::filter(is.na(gear.text)), aes(Lon.dd, Lat.dd, group = Date), alpha=0.2, colour="grey45", size=0.1, inherit.aes = F)+
   geom_jitter(data = dataset %>% dplyr::filter(!is.na(gear.text)), aes(Lon.dd, Lat.dd, color=gear.text), size = 2, shape = 6, inherit.aes = F, stroke = 0.75, width = 0.25)+
   scale_color_viridis_d(na.translate=F)+
   theme_bw()+
@@ -98,10 +94,11 @@ ggplot(bath, aes(x=x, y=y))+
 
 ```
 \pagebreak
-```{r, echo = FALSE, message=FALSE, results='hide', cache=FALSE}
+```{r read in trawl data, echo = FALSE, message=FALSE, results='hide', cache=FALSE}
 #Specify the location of files in your working directory
 test_schema <- "Data/Definitions/bioticv3.xsd"
 biotic_files <- "Data/Biotic"
+# biotic_files <- "Z:/CRUISE_DATA_2020/S2020203_PJOHANHJORT_1019/BIOLOGY/CATCH_MEASUREMENTS/BIOTIC"
 
 ### Functions to get biotic data ()parsed from biotic xml-file v3, and functions to manipulate these data. 
 ### These functions are made by Edvin Fuglebakk
@@ -481,7 +478,7 @@ cat_dataframes <- function(frames1, frames2){
 ######### Read in data using the functions and plot ########
 
 #biotic_files is the directory for biotic xml files (specified in the beginning)
-tokt <- paste0(biotic_files,"/",list.files(path="Data/Biotic", pattern = ".xml"))
+tokt <- paste0(biotic_files,"/",list.files(path=biotic_files, pattern = ".xml"))
 
 # Denne lagar tabellar for kvart nivå i biotic data
 
@@ -493,16 +490,16 @@ stasamp <- right_join(dd$fishstation,dd$catchsample) %>% mutate(cr.kg.nm=catchwe
 
 #Legg til geartype i tekstformat
 stasamp$gear.text <- "Bottom trawl"
-stasamp$gear.text[stasamp$gear %in% c("3513", "3514")] <- "Pelagic trawl"
+stasamp$gear.text[stasamp$gear %in% c("3513", "3514", "3592")] <- "Pelagic trawl"
 ```
 # Sampling depth for trawl hauls  
 
-`r length(unique(stasamp$station))` trawl hauls were taken during the survey, of which `r length(unique(stasamp$station[stasamp$gear.text == "Bottom trawl"]))` were bottom trawl, and `r length(unique(stasamp$station[stasamp$gear.text == "Pelagic trawl"]))` pelagic trawl. The trawl hauls covered a total distance of `r round((sum(dd$fishstation$distance)*1852)/1000, digits = 1)` km (`r round((sum(dd$fishstation$distance)), digits = 1)` nmi).  
+`r length(unique(stasamp$station))` trawl hauls were taken during the survey, of which `r length(unique(stasamp$station[stasamp$gear.text == "Bottom trawl"]))` were bottom trawl, and `r length(unique(stasamp$station[stasamp$gear.text == "Pelagic trawl"]))` pelagic trawl. The trawl hauls covered a total distance of `r round((sum(dd$fishstation$distance, na.rm=T)*1852)/1000, digits = 1)` km (`r round((sum(dd$fishstation$distance, na.rm=T)), digits = 1)` nmi).  
   
 The sampling stations were located in areas with bottom depths from `r round(min((stasamp$bottomdepthstart+stasamp$bottomdepthstop)/2), digits =1)` m to `r round(max((stasamp$bottomdepthstart+stasamp$bottomdepthstop)/2), digits = 1)` m, and the fishing depth varied from `r round(min((stasamp$fishingdepthmin+stasamp$fishingdepthmax)/2), digits=1)` m to `r round(max((stasamp$fishingdepthmin+stasamp$fishingdepthmax)/2), digits=1)` m.
 
 ## Mean bottom depth during trawl hauls
-```{r, echo=FALSE, message=FALSE, fig.width=6, fig.height=2.5, out.width= "70%"}
+```{r bottom depth at stations, echo=FALSE, message=FALSE, fig.width=6, fig.height=2.5, out.width= "70%"}
 ## Depth at sampled stations - fish
 stdat <- dd$fishstation
 
@@ -517,7 +514,7 @@ ggplot(stdat, aes((bottomdepthstart+bottomdepthstop)/2))+
 ```
 
 ## Mean fishing depth during trawl hauls
-```{r, echo=FALSE, message=FALSE, fig.width=6, fig.height=3, out.width= "65%"}
+```{r fishing depth at stations, echo=FALSE, message=FALSE, fig.width=6, fig.height=3, out.width= "65%"}
 #Fishing depth
 ggplot(stdat, aes((fishingdepthmin+fishingdepthmax)/2, fill = gear.text))+
   geom_histogram(color="black")+
@@ -531,7 +528,7 @@ ggplot(stdat, aes((fishingdepthmin+fishingdepthmax)/2, fill = gear.text))+
 
 ## Species diversity
 
-```{r,echo=FALSE, message=FALSE}
+```{r summarise catches,echo=FALSE, message=FALSE}
 #check what species are most common
 tst<-stasamp %>% dplyr::group_by(scientificname) %>% 
   dplyr::summarise(meanW=mean(cr.kg.nm), meanN = mean(cr.n.nm),
@@ -543,7 +540,7 @@ A total of `r length(unique(tst$scientificname))` species were registered in Sea
 
 ### Number of species identified versus the number of stations sampled
 
-```{r, echo = FALSE, message=FALSE, fig.width=3, fig.height=3, out.width= "35%"}
+```{r cumulative numer of species, echo = FALSE, message=FALSE, fig.width=3, fig.height=3, out.width= "35%"}
 #cumulative number of species vs number of stations
 
 nspec <- data.frame(station=unique(stasamp$station),
@@ -560,7 +557,7 @@ ggplot(nspec, aes(nstation, nspecies))+geom_line(size = 1)+theme_bw()+
 ## Average catch rate by species for the 20 species with highest catch rates
 
 ### Bottom trawl
-```{r,echo=FALSE, message=FALSE, fig.width=9, fig.height=3.3, out.width= "85%", fig.align="center", warning=FALSE}
+```{r catch rates barplot,echo=FALSE, message=FALSE, fig.width=9, fig.height=3.3, out.width= "85%", fig.align="center", warning=FALSE}
 tst<-stasamp %>% dplyr::group_by(gear.text,scientificname) %>% 
   dplyr::summarise(meanW=mean(cr.kg.nm), meanN = mean(cr.n.nm),
                    minW = min(cr.kg.nm), maxW = max(cr.kg.nm),
@@ -578,18 +575,12 @@ ggplot(tst %>% dplyr::filter(gear.text == gear & !is.na(scientificname)),
         axis.title.x = element_blank())+
   labs(x = "Taxon", y = "Mean catch rate (kg/nmi)", title = "Biomass")
 
-#Number
-ggplot(tst %>% dplyr::filter(gear.text == gear & !is.na(scientificname)),
-       aes(reorder(scientificname, -meanN), meanN))+geom_col()+
-  # geom_errorbar(aes(ymin = minN, ymax = maxN))+
-  coord_cartesian(xlim =c(1,20))+ #show the 20 species with highest catches
-  scale_y_continuous(expand=c(0,0), limits = c(0,max(tst$meanN[tst$gear.text==gear], na.rm=T)+100))+#, limits = c(0,700))+
-  theme_bw()+theme(axis.text.x = element_text(angle = 35, colour = "red", size = 11), axis.title.x = element_blank())+
-  labs(x = "Taxon", y = "Mean catch rate (N/nmi)", title = "Number of individuals")
-
 ```
+
+\pagebreak
+
 ### Bottom trawl excluding sponges
-```{r, echo=FALSE, message=FALSE, fig.width=9, fig.height=3.3, out.width= "85%", fig.align="center", warning=FALSE}
+```{r catch rate barplots excl sponges, echo=FALSE, message=FALSE, fig.width=9, fig.height=3.3, out.width= "85%", fig.align="center", warning=FALSE}
 
 #Weight
 ggplot(tst %>% dplyr::filter(gear.text == gear & !is.na(scientificname) & !scientificname == "Porifera"),
@@ -613,17 +604,17 @@ ggplot(tst %>% dplyr::filter(gear.text == gear & !is.na(scientificname) & !scien
 
 ## Spatial variation in catches of common species
 
-```{r,echo=FALSE, message=FALSE}
+```{r create space between plots, echo=FALSE, message=FALSE}
 my_plot_hook <- function(x, options)
   paste("\n", knitr::hook_plot_tex(x, options), "\n")
 knitr::knit_hooks$set(plot = my_plot_hook)
 ```
 
-```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 9, fig.height = 3, out.width="85%"}
+```{r spatial distribution of catches, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 9, fig.height = 3, out.width="90%"}
 #Select which species you want to plot
 species <- c("Gadus morhua", "Melanogrammus aeglefinus", "Mallotus villosus", "Boreogadus saida",
              "Micromesistius poutassou", "Clupea harengus", "Sebastes mentella", 
-             "Hippoglossoides platessoides")
+             "Hippoglossoides platessoides", "Pollachius virens")
 
 #Get coordinates for ship track
 coord.track <- dataset %>% dplyr::select(Date,Log, Lon.dd, Lat.dd) %>% data.frame()
@@ -735,7 +726,7 @@ for(i in 1:length(species)) {
 
 The following figures shows the length distribution of individuals sampled during the survey.
 
-```{r, echo=FALSE, message=FALSE, fig.width=8, fig.height=5.5, out.width= "80%", warning=FALSE}
+```{r length distributions large fish, echo=FALSE, message=FALSE, fig.width=8, fig.height=5.5, out.width= "80%", warning=FALSE}
 stasampindi <- right_join(stasamp,dd$individual)
 stasampindiage <- left_join(stasampindi, dd$agedetermination)
 
@@ -744,25 +735,25 @@ stasampindiage$weight.g <- (stasampindiage$individualweight * 1000 )
 stasampindiage$length.cm <- (stasampindiage$length * 100 )
 
 #Subset the data depending on measurement precision (largely demersal/pelagic species)
-REF5cm <- subset(stasampindiage, commonname %in% c('torsk', "hyse", "snabeluer", "vanlig uer", "lusuer"))
+REF5cm <- subset(stasampindiage, commonname %in% c('torsk', "hyse", "sei", "snabeluer", "vanlig uer", "lusuer"))
 REF1cm <- subset(stasampindiage, commonname %in% c('lodde', "polartorsk", "sild'G03", "kolmule"))
 
 ggplot(data=REF5cm, aes(x=length.cm)) + geom_histogram(breaks=seq(0, 75, by=2), col="black", fill="steelblue", alpha = .6, stroke = 0.25)  + labs(title="Histogram of length", x="Length (cm)", y="Count") + facet_wrap(~scientificname, scales="free")+theme_bw()
 
 ```
 
-```{r, echo=FALSE, message=FALSE, fig.width=6, fig.height=5, out.width= "60%", warning=FALSE}
+```{r length distribution small fish, echo=FALSE, message=FALSE, fig.width=6, fig.height=5, out.width= "60%", warning=FALSE}
 ggplot(data=REF1cm, aes(x=length.cm)) + geom_histogram(breaks=seq(0, 40, by=1), col="black", fill="steelblue", alpha = .6, stroke = 0.25)  + labs(title="Histogram of length", x="Length (cm)", y="Count") + facet_wrap(~scientificname, scales="free")+theme_bw()
 ```
 
 ## Length-weight relationships
 
-```{r, echo=FALSE, message=FALSE, fig.width=8, fig.height=5, out.width= "80%", warning=FALSE}
+```{r length-weight plots large fish, echo=FALSE, message=FALSE, fig.width=8, fig.height=5, out.width= "80%", warning=FALSE}
 ggplot(REF5cm, aes(length.cm, individualweight))+geom_point(size = 0.5)+facet_wrap(~scientificname, scales = "free")+
   theme_bw()+labs(x = "Length (cm)", y = "Weight (kg)")
 ```
 
-```{r, echo=FALSE, message=FALSE, fig.width=5.5, fig.height=5, out.width= "50%", warning=FALSE}
+```{r length-weight plots small fish, echo=FALSE, message=FALSE, fig.width=5.5, fig.height=5, out.width= "50%", warning=FALSE}
 ggplot(REF1cm, aes(length.cm, weight.g))+geom_point(size = 0.5)+facet_wrap(~scientificname, scales = "free")+
   theme_bw()+labs(x = "Length (cm)", y = "Weight (g)")
 
@@ -771,12 +762,12 @@ ggplot(REF1cm, aes(length.cm, weight.g))+geom_point(size = 0.5)+facet_wrap(~scie
 
 ## Length-age relationships
 
-```{r, echo=FALSE, message=FALSE, fig.width=8, fig.height=5, out.width= "80%", warning=FALSE}
+```{r length-age large fish, echo=FALSE, message=FALSE, fig.width=8, fig.height=5, out.width= "80%", warning=FALSE}
 ggplot(REF5cm, aes(length.cm, age))+geom_point(size = 0.5)+facet_wrap(~scientificname, scales = "free")+
   theme_bw()+labs(x = "Length (cm)", y = "Age (years)")
 ```
 
-```{r, echo=FALSE, message=FALSE, fig.width=5.5, fig.height=5, out.width= "50%", warning=FALSE}
+```{r length-age small fish, echo=FALSE, message=FALSE, fig.width=5.5, fig.height=5, out.width= "50%", warning=FALSE}
 ggplot(REF1cm, aes(length.cm, age))+geom_point(size = 0.5)+facet_wrap(~scientificname, scales = "free")+
   theme_bw()+labs(x = "Length (cm)", y = "Age (years)")
 ```
@@ -784,7 +775,7 @@ ggplot(REF1cm, aes(length.cm, age))+geom_point(size = 0.5)+facet_wrap(~scientifi
 
 ## GSI versus maturity stage of female cod and haddock
 
-```{r, echo=FALSE, message=FALSE, fig.width=6, fig.height=3, out.width= "70%", warning=FALSE}
+```{r GSI cod and haddock, echo=FALSE, message=FALSE, fig.width=6, fig.height=3, out.width= "70%", warning=FALSE}
 REF5cm$GSI <- (REF5cm$gonadweight/(REF5cm$individualweight-REF5cm$gonadweight))*100
 
 ggplot(REF5cm %>% dplyr::filter(commonname %in% c("torsk", "hyse") & !is.na(maturationstage) & sex == "1"),
@@ -798,7 +789,7 @@ ggplot(REF5cm %>% dplyr::filter(commonname %in% c("torsk", "hyse") & !is.na(matu
 
 The vertical line represents the size (40 cm) over which gonad samples should be taken if GSI < 2 % (horizontal line).
 
-```{r, echo=FALSE, message=FALSE, fig.width=9, fig.height=6, out.width= "80%", warning=FALSE}
+```{r GSI versus length and maturity haddock, echo=FALSE, message=FALSE, fig.width=9, fig.height=6, out.width= "80%", warning=FALSE}
 
 ggplot(REF5cm %>% dplyr::filter(commonname == "hyse" & !is.na(maturationstage) & sex == "1"),
        aes(length.cm, GSI))+geom_point(aes(color = maturationstage), shape = 3, size = 1, stroke = 1)+facet_wrap(~scientificname, scales = "free")+geom_abline(slope = 0, intercept = 2)+
@@ -811,7 +802,7 @@ ggplot(REF5cm %>% dplyr::filter(commonname == "hyse" & !is.na(maturationstage) &
 
 The vertical line represents the size (60 cm) over which most females with GSI > 1.5 % (horizontal line) are maturing (Skjæraasen et al. 2012).
 
-```{r, echo=FALSE, message=FALSE, fig.width=9, fig.height=6, out.width= "80%", warning=FALSE}
+```{r GSI versus length and maturity cod, echo=FALSE, message=FALSE, fig.width=9, fig.height=6, out.width= "80%", warning=FALSE}
 
 ggplot(REF5cm %>% dplyr::filter(commonname == "torsk" & !is.na(maturationstage) & sex == "1"),
        aes(length.cm, GSI))+geom_point(aes(color = maturationstage), shape = 3, size = 1, stroke = 1)+facet_wrap(~scientificname, scales = "free")+geom_abline(slope = 0, intercept = 1.5)+
@@ -823,7 +814,7 @@ ggplot(REF5cm %>% dplyr::filter(commonname == "torsk" & !is.na(maturationstage) 
 
 # Acoustic registrations
 
-```{r, echo=FALSE, message=FALSE, warning=FALSE}
+```{r read in acoustic data 1, echo=FALSE, message=FALSE, warning=FALSE}
 ### Get acoustic data
 
 #Read in depth-integrated acoustic data from the Acoustic/Integrated directory
@@ -851,7 +842,7 @@ A total of `r (round((sum(acu.dat$LOGSTOP[acu.dat$LOGSTOP>5000]-acu.dat$LOGSTART
 
 ### Total backscatter
 
-```{r, echo=FALSE, message=FALSE, fig.width=6, fig.height=4, out.width= "60%", warning=FALSE}
+```{r prepare and plot total SA, echo=FALSE, message=FALSE, fig.width=6, fig.height=4, out.width= "60%", warning=FALSE}
 ### Map area etc
 Bubble.size<-9        #Max size of bubbles in bubble plots
 
@@ -899,7 +890,7 @@ ggplot(bath, aes(x=x, y=y))+
 
 ### Pelagic species
 
-```{r, echo=FALSE, message=FALSE, fig.width=9, fig.height=3, out.width= "90%", warning=FALSE, fig.align="center"}
+```{r plot SA of pelagics, echo=FALSE, message=FALSE, fig.width=9, fig.height=3, out.width= "90%", warning=FALSE, fig.align="center"}
 # Plot
 pelagics <- c("Plankton","Capelin") #+herring?
 
@@ -919,7 +910,7 @@ ggplot(bath, aes(x=x, y=y))+
 
 ### Demersal species
 
-```{r, echo=FALSE, message=FALSE, fig.width=9, fig.height=3, out.width= "90%", warning=FALSE, fig.align="center"}
+```{r plot SA of demersals, echo=FALSE, message=FALSE, fig.width=9, fig.height=3, out.width= "90%", warning=FALSE, fig.align="center"}
 
 demersals <- c("Cod", "Haddock")
 
@@ -941,7 +932,7 @@ ggplot(bath, aes(x=x, y=y))+
 ## Acoustic backscatter in depth channels
 
 ### Distance from the surface to weighted depth of acoustic registrations
-```{r, echo=FALSE, eval=T, message=FALSE, fig.width=8, fig.height=4, out.width= "90%", warning=FALSE, fig.align="center"}
+```{r read in acoustic data 2 and plot vertical distribution of pelagics, echo=FALSE, eval=T, message=FALSE, fig.width=8, fig.height=4, out.width= "90%", warning=FALSE, fig.align="center"}
 
 #### SA resolved in depth channels, plot day night distribution of SA for each species
 #in a histogram
@@ -1034,7 +1025,7 @@ ggplot(acu.wmean %>% dplyr::filter(variable %in% pelagics),
 
 ### Distance from the seafloor (or max scrutinized depth) to weighted depth of acoustic registrations
 
-```{r, echo=FALSE,eval=T, message=FALSE, fig.width=8, fig.height=4, out.width= "90%", warning=FALSE, fig.align="center"}
+```{r plot vertical distribution of demersals, echo=FALSE,eval=T, message=FALSE, fig.width=8, fig.height=4, out.width= "90%", warning=FALSE, fig.align="center"}
 ggplot(acu.wmean %>% dplyr::filter(variable %in% demersals),
        aes(BDMAX-wdepth))+
   geom_histogram(aes(fill=TOD), position="dodge", binwidth = 20)+
@@ -1048,7 +1039,7 @@ ggplot(acu.wmean %>% dplyr::filter(variable %in% demersals),
 \pagebreak
 
 # CTD
-```{r, echo=FALSE, message=FALSE}
+```{r read in ctd data, echo=FALSE, message=FALSE}
 
 #create a list of the files from your target directory
 file_list <- list.files(path="Data/CTD",  pattern = ".cnv")
@@ -1111,11 +1102,12 @@ ctd.plot <- ctd %>% dplyr::group_by(station, Lon, Lat, Date, Time, plotdepth, ma
   data.frame()
 
 ```
+
 ## Summary of measurements
 
 `r length(unique(ctd$station))` CTD casts were done during the survey, covering a total depth of `r round(sum(maxdepth$max_depth)/1000, digits = 1)` km.
 
-```{r, echo=FALSE, fig.height=3, fig.width=4.5, out.width= "40%",fig.show="hold", message=FALSE, warning=FALSE}
+```{r plot all CTD measurements, echo=FALSE, fig.height=3, fig.width=4.5, out.width= "40%",fig.show="hold", message=FALSE, warning=FALSE}
 
 ggplot(ctd, aes(temperature))+geom_histogram(color="black")+theme_bw()+
   labs(x = "Temperature (deg C)", y = "Count")
@@ -1128,7 +1120,7 @@ ggplot(ctd, aes(salinity_PSU))+geom_histogram(color="black")+theme_bw()+
 
 ## Variation in temperature and salinity with bathymetry and geographical location
 
-```{r, echo=FALSE, message=FALSE, fig.width=9, fig.height=3, out.width= "85%", warning=FALSE, fig.align="center"}
+```{r spatial variation in temperature, echo=FALSE, message=FALSE, fig.width=9, fig.height=3, out.width= "85%", warning=FALSE, fig.align="center"}
 
 ggplot(bath, aes(x=x, y=y))+
   geom_contour(aes(z=z), breaks=d.contours,colour="lightblue", size=0.5,show.legend = TRUE)+ 
@@ -1143,7 +1135,7 @@ ggplot(bath, aes(x=x, y=y))+
 (deg C)")
 ```
 
-```{r, echo=FALSE, message=FALSE, fig.width=9, fig.height=3, out.width= "85%", warning=FALSE, fig.align="center"}
+```{r spatial variation in salinity, echo=FALSE, message=FALSE, fig.width=9, fig.height=3, out.width= "85%", warning=FALSE, fig.align="center"}
 
 ggplot(bath, aes(x=x, y=y))+
   geom_contour(aes(z=z), breaks=d.contours,colour="lightblue", size=0.5,show.legend = TRUE)+ 
@@ -1160,7 +1152,7 @@ ggplot(bath, aes(x=x, y=y))+
 \pagebreak
 ## Density in the water column
 
-```{r, echo=FALSE, message=FALSE, fig.width=9, fig.height=2.8, warning=FALSE, fig.align="center"}
+```{r density in water column, echo=FALSE, message=FALSE, fig.width=9, fig.height=2.8, warning=FALSE, fig.align="center"}
 
 depthlim <- 100 #choose the maximum depth you want to plot
 
@@ -1190,7 +1182,7 @@ ggplot(ctd, aes(density, pressure_db, group=station, color=Lon))+
 \pagebreak
 ## Light in the water column
 
-```{r, echo=FALSE, message=FALSE, fig.width=9, fig.height=4, warning=FALSE, fig.align="center"}
+```{r light in water column, echo=FALSE, message=FALSE, fig.width=9, fig.height=4, warning=FALSE, fig.align="center"}
 
 tst <- strptime(ctd$Time, format = "%H:%M:%S")
 tt1 <- chron::times(format(tst, "%H:%M:%S"))
