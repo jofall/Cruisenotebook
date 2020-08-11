@@ -32,7 +32,7 @@ For acoustic, biotic and track data, it is also possible to replace the folder s
 
 ## Gather data
 
-Collect the following cruise data from the server on board:
+Collect the following cruise data from the server on board/Cruisenotebook github:
 
 1. Acoustic data: *ListUserFile03.txt* and *ListUserFile16.txt*. If these reports have not been created, export them from LSSS.
    + Example path to acoustic reports on Johan Hjort: //nas1-jhjort/CRUISE_DATA_*YEAR*/  
@@ -69,40 +69,40 @@ Line numbers refer to the file *Report_Winter_Survey.Rmd*
 
 2. Change title and author.
 
-3. Check the r packages specified in the second r code chunk (lines 27-29), and install any packages you do not have on your computer.
+3. Check the r packages specified in the second r code chunk (lines 23-24), and install any packages you do not have on your computer.
 
-4. Lines 44-46: specify the extent of your survey area and the depth contours you would like to show in map plots.
+4. Lines 40-42: specify the extent of your survey area and the depth contours you would like to show in map plots.
 
 ### Trawl data
 
-5. Load packages by running lines 27-29 (without knitting the whole document!), then run lines 55-76. Run unique(dataset$`Station type`) and check that the gear definitions on lines 80-87 correspond to those used in your cruise. If not, change the definitions.
+5. Load packages by running lines 23-25 (without knitting the whole document!), then run lines 48-72. Run unique(dataset$`Station type`) and check that the gear definitions on lines 75-79 correspond to those used in your cruise. If not, change the definitions.
 
-6. Check if you are using any other trawls than those specified at lines 496-497, if so add them/modify. Change also the gears at line 510-511 if necessary.
+6. Check if you are using any other trawls than those specified at lines 492-493, if so add them/modify. Change also the gears at line 506-507 if necessary.
 
-7. Lines 619-910 contain code for plotting catches of different species on a map, by gear type. For each species, two sets of plots are produced - one showing catch rates in biomass/nmi and one showing numbers/nmi. Adjust this code to match the species in your area by changing the "species <-" argument in each code chunk, and deleting/copying code chunks as necessary. The figure size can be adjusted using the "fig.width" and "fig.height" arguments at the beginning of each code chunk. In this example, this has been done for polar cod, blue whiting, and redfish, which were caught in fewer gears than the other species.
+7. Lines 605-721 contain code for plotting catches of different species on a map, by gear type. For each species, two sets of plots can be produced - one showing catch rates in biomass/nmi and one showing numbers/nmi. Select which species you want to plot by changing the "species <-" argument at line 615. Select whether you want to plot numbers, biomass or both at lines 626-627. The figure size (same for all figures) can be adjusted using the "fig.width" and "fig.height" arguments at line 613.
 
-8. Lines 926-927: specify the species that you wish to plot length distributions, length-weight relationships, and length-age relationships for. Here they are divided into larger (demersal) and smaller (pelagic) species. Note that age data will not be available early in the survey, and will later only be available for species whose otholits are read on board.
+8. Lines 738-739: specify the species that you wish to plot length distributions, length-weight relationships, and length-age relationships for. Here they are divided into larger (demersal) and smaller (pelagic) species. Note that age data will not be available early in the survey, and will later only be available for species whose otholits are read on board.
 
-9. Line 1021: This inline code summarises the total distance of scrutinized acoustic transects, accounting for the possibility of a reset in the log values, i.e., that the log reaches 10000 and then starts over from 1. No change necessary.
+9. Line 833: This inline code summarises the total distance of scrutinized acoustic transects, accounting for the possibility of a reset in the log values, i.e., that the log reaches 10000 and then starts over from 1. No change necessary.
 
-10. Line 1023: In this section it is possible to add screenshots from LSSS (or other images) in case you find particularly interesting or unusual echograms. The screenshot must be placed in the project directory, and the filename inserted within the brackets on line 1025. Remove the "<" sign at the beginning of each paragraph. The figure width can be adjusted within the curly brackets. Remove line 1023-1027 in case you have no screenshots to add.
+10. Line 835: In this section it is possible to add screenshots from LSSS (or other images) in case you find particularly interesting or unusual echograms. The screenshot must be placed in the project directory, and the filename inserted within the brackets on line 837 Remove the "<" sign at the beginning of each paragraph. The figure width can be adjusted within the curly brackets. Remove line 835-839 or leave the code unchanged in case you have no screen shots to add.
 
 ### Acoustic data
 
-11. Line 1035: For acoustic plots, the maximum bubble size can be adjusted here.
+11. Line 847: The maximum bubble size for acoustic plots can be adjusted here.
 
-12. Line 1038: Change year manually in case you are using this script to plot data from a past year, or use code on line 1039.
+12. Line 850: Change year manually in case you are using this script to plot data from a past year, or use code on line 1039.
 
-13. Line 1040: This script selects data from the 38 kHz frequency, which is what is normally exported from LSSS. Change here if you are looking at other frequencies.
+13. Line 851: This script selects data from the 38 kHz frequency, which is what is normally exported from LSSS. Change here if you are looking at other frequencies.
 
-14. Line 1053: If you want other names for the acoustic categories than the Norwegian output from LSSS, specify labels here. "Comment out" or delete lines 1053-1057 & 1093-1095 if you don't want to change the names.
+14. Line 864: If you want other names for the acoustic categories than the Norwegian output from LSSS, specify labels here. "Comment out" or delete lines 864-868 & 1004-1006 if you don't want to change the names.
 
-15. Line 1062: Check name of survey and vessel.
+15. Line 873: Check name of survey and vessel.
 
-16. Line 1084/1104: Specify names of pelagic/demersal acoustic categories that you want to plot on a map.
+16. Line 895/915: Specify names of pelagic/demersal acoustic categories that you want to plot on a map.
 
 ### CTD
 
-17. Line 1370: Choose the maximum depth for plots of density and irradiance.
+17. Line 1157: Choose the maximum depth for plots of density and irradiance.
 
 ---
