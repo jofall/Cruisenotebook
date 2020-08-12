@@ -112,6 +112,8 @@ Line numbers refer to the file *Report_BESS.Rmd*
 
 ### Whales
 
+If you do not have whale data, "comment out" or delete lines 1207-1318.
+
 20. Line 1220: If other species have been observed, specify names here. 
 
 21. Line 1248: This line was required to clean some old entries from the file that belonged to a different cruise. "Comment out" or delete if this does not apply to your cruise.
@@ -119,6 +121,8 @@ Line numbers refer to the file *Report_BESS.Rmd*
 22. Lines 1286-1317: These plots assume that you are in an area where white-beaked dolphins are much more abundant than the other species, and they therefore get their own plot. If this does not apply, the two plots can be combined into one by deleting the second block of code and removing "%>% dplyr::filter(!species == "White-beaked dolphin")" from the first plot.
 
 ### Birds
+
+If you do not have seabird data, "comment out" or delete lines 1327-1500.
 
 23. Lines 1415-1436: These two figures show histograms of the total number observed, by species. As some species occur in higher numbers than others, one figure shows species that are more abundant while the other shows those occurring in lower numbers. The split between the figures can be specified at line 1416
 
