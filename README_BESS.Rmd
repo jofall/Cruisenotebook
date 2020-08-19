@@ -100,7 +100,7 @@ Line numbers refer to the file *Report_BESS.Rmd*
 
 13. Line 823: This script selects data from the 38 kHz frequency, which is what is normally exported from LSSS. Change here if you are looking at other frequencies.
 
-14. Line 836: If you want other names for the acoustic categories than the Norwegian output from LSSS, specify labels here. "Comment out" or delete lines 836-842 & 978-980 if you don't want to change the names.
+14. Line 836: If you want other names for the acoustic categories than the Norwegian output from LSSS, specify labels here. "Comment out" or delete lines 836-842 & 978-980 and change the names to Norwegian at lines 869 and 889 if you don't want to change the names.
 
 15. Line 847: Check name of survey and vessel.
 
