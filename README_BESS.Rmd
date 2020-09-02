@@ -1,13 +1,40 @@
 ---
-title: "Instructions for generating a cruise report from the Barents Sea Ecosystem Survey"
+title: Instructions for generating a cruise report from the Barents Sea Ecosystem
+  Survey
 author: "Johanna Fall"
 date: "`r format(Sys.time(), '%d/%m/%Y')`"
-output: pdf_document
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+## Installation of R, R Studio, Rtools and latex
+
+If these tools are not installed on your laptop, take the following steps:
+
+* Install R from https://cran.uib.no/ 
+* Install R Studio from https://rstudio.com/products/rstudio/download/ (R Studio Desktop, free version)
+* Download Rtools from https://cran.r-project.org/bin/windows/Rtools/
+* Install Rtools (you may need to run the installer as administrator)
+* Open R Studio (as administrator if you needed this to install Rtools)
+* Install latex (TinyTex) by running the following commands in the Console window (bottom left window) in RStudio:
+
+```{r, eval=F}
+install.packages("tinytex")
+tinytex::install_tinytex()
+```
+
+* Restart R Studio (as administrator)
+* Choose File -> New File -> R Markdown... Choose Pdf format and click OK.
+* Save the file (anywhere)
+* Click the knit button at the top of the document.
+* If a window appears prompting you to install packages, click yes. When the installations are complete you should be able to knit the document to pdf and can proceed to the steps below.
+* If you successfully knitted the test document but get an error about missing latex installation when knitting the report file, try running R Studio as administrator.
+
 ## Create a project and folder structure
 
 1. Create a new R Studio project.
