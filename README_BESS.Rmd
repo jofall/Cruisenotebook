@@ -18,8 +18,7 @@ If these tools are not installed on your laptop, take the following steps:
 
 * Install R from https://cran.uib.no/ 
 * Install R Studio from https://rstudio.com/products/rstudio/download/ (R Studio Desktop, free version)
-* Download Rtools from https://cran.r-project.org/bin/windows/Rtools/
-* Install Rtools (you may need to run the installer as administrator)
+* Download Rtools from https://cran.r-project.org/bin/windows/Rtools/ and install (you may need to run the installer as administrator)
 * Open R Studio (as administrator if you needed this to install Rtools)
 * Install latex (TinyTex) by running the following commands in the Console window (bottom left window) in RStudio:
 
@@ -65,21 +64,21 @@ Collect the following cruise data from the server on board/the Cruisenotebook gi
 1. Acoustic data: *ListUserFile03.txt* and *ListUserFile16.txt*. If these reports have not been created, export them from LSSS.
    + Example path to acoustic reports on Johan Hjort: //nas1-jhjort/CRUISE_DATA_*YEAR*/  
    *cruise_name*/ACOUSTIC/LSSS/REPORTS/
-   + Place in "Acoustic" folder.
+   + Place *ListUserFile03.txt* in the "Acoustic/Integrated" folder and *ListUserFile16.txt* in the "Acoustic/Channels" folder.
 
 2. Trawl data: The *.xml* file exported from Sea2Data. 
    + Example path from Johan Hjort: //nas1-jhjort/CRUISE_DATA_*YEAR*/*cruise_name*/  
    BIOLOGY/CATCH_MEASUREMENTS/BIOTIC/
    + Place in "Biotic" folder.
 
-3. Seabird data: Data sheet from bird observer (ods-format, if other format change code for reading in this file at line 1732 in the script) and the file *"Field sheet, Methodology, species codes NINA.xls"*. Place in folder "Birds".
+3. Seabird data: Data sheet from bird observer (ods-format, if other format change code for reading in this file at line 1732 in the script) and the file *"Field sheet, Methodology, species codes NINA.xls"*. May not be available until late in the cruise. Place in folder "Birds".
 
-4. CTD data: *ctdsort.cnv*-files (one for each CTD cast).
+4. CTD data: *ctdsortXXXX.cnv* or *staXXXX.cnv*-files (one for each CTD cast).
    + Example path from Johan Hjort: //nas1-jhjort/CRUISE_DATA_*YEAR*/*cruise_name*/  
    PHYSICS/CTD/CTD_DATA/
    + Place in "CTD" folder.
 
-5. Definitions: These is a file used for reading the biotic xlm-data. Download *bioticv3* from https://github.com/jofall/Cruisenotebook and place in folder "Definitions".
+5. Definitions: This is a file used for reading the biotic xlm-data. Download *bioticv3* from https://github.com/jofall/Cruisenotebook and place in folder "Definitions".
 
 6. Map data: depth contours for plotting. Download the file *ETOPO1_nm4.csv* from the github repository and place in folder "GeoData".
 
@@ -89,7 +88,7 @@ Collect the following cruise data from the server on board/the Cruisenotebook gi
    CRUISE_LOG/TRACK/
    + Place in "Track" folder.
 
-8. Whale data: Excel-file with sightings and the *Miljø.log*-file (from either the starboard or port side) from the whale observers. Place in "Whale" folder.
+8. Whale data: Excel-file with sightings and the *Miljø.log*-file (from either the starboard or port side) from the whale observers. May not be available until late in the cruise. Place in "Whale" folder.
 
 NB! It is important not to place other files in these folders, as the code is based on loading files with specific file extensions.
 
@@ -127,7 +126,7 @@ Line numbers refer to the file *Report_BESS.Rmd*
 
 13. Line 823: This script selects data from the 38 kHz frequency, which is what is normally exported from LSSS. Change here if you are looking at other frequencies.
 
-14. Line 836: If you want other names for the acoustic categories than the (usually) Norwegian output from LSSS, specify labels here. "Comment out" or delete lines 836-842 & 978-980 and change the names to Norwegian at lines 869 and 889 if you don't want to change the names.
+14. Line 836: If you want other names for the acoustic categories than the (usually) Norwegian output from LSSS, specify labels here. Make sure that the names are specified in the same order as the acoustic categories in the original data. "Comment out" or delete lines 836-842 & 978-980 and change the names to Norwegian at lines 869 and 889 if you don't want to change the names.
 
 15. Line 847: Check name of survey and vessel.
 
