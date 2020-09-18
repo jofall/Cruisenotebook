@@ -112,46 +112,46 @@ Line numbers refer to the file *Report_BESS.Rmd*
 
 7. Lines 620-733 contain code for plotting catches of different species on a map, by gear type. For each species, two sets of plots can be produced - one showing catch rates in biomass/nmi and one showing numbers/nmi. Select which species you want to plot by changing the "species <-" argument at line 628. Select whether you want to plot numbers, biomass or both at lines 639-640. The figure size (same for all figures) can be adjusted using the "fig.width" and "fig.height" arguments at line 626.
 
-8. Lines 749-750: specify the species that you wish to plot length distributions, length-weight relationships, and length-age relationships for. Here they are divided into larger (demersal) and smaller (pelagic) species. Note that age data will not be available early in the survey, and will later only be available for species whose otholits are read on board.
+8. Lines 750-751: specify the species that you wish to plot length distributions, length-weight relationships, and length-age relationships for. Here they are divided into larger (demersal) and smaller (pelagic) species. Note that age data will not be available early in the survey, and will later only be available for species whose otholits are read on board.
 
-9. Line 804: This inline code summarises the total distance of scrutinized acoustic transects, accounting for the possibility of a reset in the log values, i.e., that the log reaches 10000 and then starts over from 1. No change necessary.
+9. Line 806: This inline code summarises the total distance of scrutinized acoustic transects, accounting for the possibility of a reset in the log values, i.e., that the log reaches 10000 and then starts over from 1. No change necessary.
 
 10. Line 806: In this section it is possible to add screenshots from LSSS (or other images) in case you find particularly interesting or unusual echograms. The screenshot must be placed in the project directory, and the filename inserted within the brackets on line 808. The figure width can be adjusted within the curly brackets.
 
 ### Acoustic data
 
-11. Line 818: For acoustic plots, the maximum bubble size can be adjusted here.
+11. Line 820: For acoustic plots, the maximum bubble size can be adjusted here.
 
-12. Line 821: Change year manually in case you are using this script to plot data from a past year, or use code on line 822
+12. Line 823: Change year manually in case you are using this script to plot data from a past year, or use code on line 824
 
-13. Line 823: This script selects data from the 38 kHz frequency, which is what is normally exported from LSSS. Change here if you are looking at other frequencies.
+13. Line 825: This script selects data from the 38 kHz frequency, which is what is normally exported from LSSS. Change here if you are looking at other frequencies.
 
-14. Line 836: If you want other names for the acoustic categories than the (usually) Norwegian output from LSSS, specify labels here. Make sure that the names are specified in the same order as the acoustic categories in the original data. "Comment out" or delete lines 836-842 & 978-980 and change the names to Norwegian at lines 869 and 889 if you don't want to change the names.
+14. Line 838: If you want other names for the acoustic categories than the (usually) Norwegian output from LSSS, specify labels here. Make sure that the names are specified in the same order as the acoustic categories in the original data. "Comment out" or delete lines 838-844 & 980-982 and change the names to Norwegian at lines 871 and 891 if you don't want to change the names.
 
-15. Line 847: Check name of survey and vessel.
+15. Line 849: Check name of survey and vessel.
 
-16. Line 869/889: Specify names of pelagic/demersal acoustic categories that you want to plot on a map.
+16. Line 871/891: Specify names of pelagic/demersal acoustic categories that you want to plot on a map.
 
 ### CTD
 
-17. Line 1150: Choose the maximum depth for plots of density and irradiance.
+17. Line 1152: Choose the maximum depth for plots of density and irradiance.
 
 ### Whales
 
-If you do not have whale data, "comment out" or delete lines 1207-1318.
+If you do not have whale data, "comment out" or delete lines 1209-1320.
 
-20. Line 1220: If other species have been observed, specify names here. 
+20. Line 1222: If other species have been observed, specify names here. 
 
-21. Line 1248: This line was required to clean some old entries from the file that belonged to a different cruise. "Comment out" or delete if this does not apply to your cruise.
+21. Line 1250: This line was required to clean some old entries from the file that belonged to a different cruise. "Comment out" or delete if this does not apply to your cruise.
 
-22. Lines 1286-1317: These plots assume that you are in an area where white-beaked dolphins are much more abundant than the other species, and they therefore get their own plot. If this does not apply, the two plots can be combined into one by deleting the second block of code and removing "%>% dplyr::filter(!species == "White-beaked dolphin")" from the first plot.
+22. Lines 1288-1319: These plots assume that you are in an area where white-beaked dolphins are much more abundant than the other species, and they therefore get their own plot. If this does not apply, the two plots can be combined into one by deleting the second block of code and removing "%>% dplyr::filter(!species == "White-beaked dolphin")" from the first plot.
 
 ### Birds
 
-If you do not have seabird data, "comment out" or delete lines 1327-1500.
+If you do not have seabird data, "comment out" or delete lines 1332-1503.
 
-23. Lines 1415-1436: These two figures show histograms of the total number observed, by species. As some species occur in higher numbers than others, one figure shows species that are more abundant while the other shows those occurring in lower numbers. The split between the figures can be specified at line 1416
+23. Lines 1418-1440: These two figures show histograms of the total number observed, by species. As some species occur in higher numbers than others, one figure shows species that are more abundant while the other shows those occurring in lower numbers. The split between the figures can be specified at line 1419
 
-24. The last set of figures show the spatial distribution of bird observations. These are divided into three plots based on observed numbers - low, medium, and high. The split between these three plots can be adjusted at lines 1459, 1477, and 1494 (e.g., "filter(maxN>25)").
+24. The last set of figures show the spatial distribution of bird observations. These are divided into three plots based on observed numbers - low, medium, and high. The split between these three plots can be adjusted at lines 1462, 1480, and 1497 (e.g., "filter(maxN>25)").
 
 ---
