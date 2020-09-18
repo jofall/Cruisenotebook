@@ -89,7 +89,7 @@ ggplot(bath, aes(x=x, y=y))+
   geom_jitter(data = dataset %>% dplyr::filter(!is.na(gear.text)), aes(Lon.dd, Lat.dd, color=gear.text), size = 2, shape = 6, inherit.aes = F, stroke = 0.75, width = 0.25)+
   scale_color_viridis_d(na.translate=F)+
   theme_bw()+
-  coord_cartesian(xlim = Xlim,ylim = Ylim)+
+  coord_map(xlim = Xlim,ylim = Ylim)+
   labs(x = "Longitude", y = "Latitude", color="Sampling gear")
 
 ```
@@ -610,7 +610,7 @@ my_plot_hook <- function(x, options)
 knitr::knit_hooks$set(plot = my_plot_hook)
 ```
 
-```{r spatial distribution of catches, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 9, fig.height = 3, out.width="90%"}
+```{r spatial distribution of catches, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 9, fig.height = 3, out.width="90%", fig.align="left"}
 #Select which species you want to plot
 species <- c("Gadus morhua", "Melanogrammus aeglefinus", "Mallotus villosus", "Boreogadus saida",
              "Micromesistius poutassou", "Clupea harengus", "Sebastes mentella", 
@@ -662,7 +662,7 @@ for(i in 1:length(species)) {
       facet_grid( ~ gear.text) +
       scale_size_area(max_size = Bubble.size) +
       theme_bw() +
-      coord_cartesian(xlim = Xlim, ylim = Ylim) +
+      coord_map(xlim = Xlim, ylim = Ylim) +
       labs(
         x = NULL,
         y = NULL,
@@ -708,7 +708,7 @@ for(i in 1:length(species)) {
       facet_grid( ~ gear.text) +
       scale_size_area(max_size = Bubble.size) +
       theme_bw() +
-      coord_cartesian(xlim = Xlim, ylim = Ylim) +
+      coord_map(xlim = Xlim, ylim = Ylim) +
       labs(
         x = NULL,
         y = NULL,
@@ -882,7 +882,7 @@ ggplot(bath, aes(x=x, y=y))+
   geom_path(data=acu.dat.map.melt  %>% dplyr::filter(variable == "Total"),aes(LONGITUDE,LATITUDE), linejoin="round",lineend="square",alpha=0.4,colour="black",size=0.4)+
   scale_size_area(max_size=Bubble.size)+
   theme_bw()+
-  coord_cartesian(xlim = Xlim,ylim = Ylim)+
+  coord_map(xlim = Xlim,ylim = Ylim)+
   labs(x = NULL, y = NULL, size = "Sa - values", title=Title)
 ```
 
@@ -904,7 +904,7 @@ ggplot(bath, aes(x=x, y=y))+
             aes(LONGITUDE,LATITUDE), linejoin="round",lineend="square",alpha=0.4,colour="black",size=0.4)+
   scale_size_area(max_size=Bubble.size)+
   theme_bw()+
-  coord_cartesian(xlim = Xlim,ylim = Ylim)+
+  coord_map(xlim = Xlim,ylim = Ylim)+
   labs(x = NULL, y = NULL, size = "Sa - values", title=Title)
 ```
 
@@ -924,7 +924,7 @@ ggplot(bath, aes(x=x, y=y))+
             aes(LONGITUDE,LATITUDE), linejoin="round",lineend="square",alpha=0.4,colour="black",size=0.4)+
   scale_size_area(max_size=Bubble.size)+
   theme_bw()+
-  coord_cartesian(xlim = Xlim,ylim = Ylim)+
+  coord_map(xlim = Xlim,ylim = Ylim)+
   labs(x = NULL, y = NULL, size = "Sa - values", title=Title)
 
 ```
@@ -1130,7 +1130,7 @@ ggplot(bath, aes(x=x, y=y))+
   facet_wrap(~plotdepth)+
   scale_fill_distiller(palette="RdYlBu")+
   theme_bw()+
-  coord_cartesian(xlim = Xlim,ylim = Ylim)+
+  coord_map(xlim = Xlim,ylim = Ylim)+
   labs(x = "Longitude", y = "Latitude", fill="Mean temperature
 (deg C)")
 ```
@@ -1145,7 +1145,7 @@ ggplot(bath, aes(x=x, y=y))+
   facet_wrap(~plotdepth)+
   scale_fill_distiller(palette="BuPu", trans = "reverse", guide = guide_colorbar(reverse = T))+
   theme_bw()+
-  coord_cartesian(xlim = Xlim,ylim = Ylim)+
+  coord_map(xlim = Xlim,ylim = Ylim)+
   labs(x = "Longitude", y = "Latitude", fill="Mean salinity (PSU)")
 ```
 

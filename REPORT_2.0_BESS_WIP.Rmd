@@ -93,7 +93,7 @@ ggplot(bath, aes(x=x, y=y))+
   geom_jitter(data = dataset %>% dplyr::filter(!is.na(gear.text)), aes(Lon.dd, Lat.dd, color=gear.text), size = 2, shape = 6, inherit.aes = F, stroke = 0.75, width = 0.25)+
   scale_color_viridis_d(na.translate=F)+
   theme_bw()+
-  coord_cartesian(xlim = Xlim,ylim = Ylim)+
+  coord_map(xlim = Xlim,ylim = Ylim)+
   labs(x = "Longitude", y = "Latitude", color="Sampling gear")
 
 ```
@@ -240,7 +240,7 @@ my_plot_hook <- function(x, options)
 knitr::knit_hooks$set(plot = my_plot_hook)
 ```
 
-```{r spatial distribution of catches, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 9, fig.height = 3, out.width="90%"}
+```{r spatial distribution of catches, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 9, fig.height = 3, out.width="90%", fig.align="left"}
 #Select which species you want to plot
 species <- c("Mallotus villosus", "Boreogadus saida","Micromesistius poutassou", "Clupea harengus", 
              "Melanogrammus aeglefinus", "Gadus morhua", "Sebastes mentella", "Sebastes norvegicus", 
@@ -292,7 +292,7 @@ for(i in 1:length(species)) {
       facet_grid( ~ gear.text) +
       scale_size_area(max_size = Bubble.size) +
       theme_bw() +
-      coord_cartesian(xlim = Xlim, ylim = Ylim) +
+      coord_map(xlim = Xlim, ylim = Ylim) +
       labs(
         x = NULL,
         y = NULL,
@@ -338,7 +338,7 @@ for(i in 1:length(species)) {
       facet_grid( ~ gear.text) +
       scale_size_area(max_size = Bubble.size) +
       theme_bw() +
-      coord_cartesian(xlim = Xlim, ylim = Ylim) +
+      coord_map(xlim = Xlim, ylim = Ylim) +
       labs(
         x = NULL,
         y = NULL,
@@ -349,7 +349,7 @@ for(i in 1:length(species)) {
   }
 }
 ```
-
+\pagebreak
 ## Length distributions
 
 The following figures shows the length distribution of individuals sampled during the survey.
@@ -399,7 +399,7 @@ ggplot(REF5cm, aes(length.cm, age))+geom_point(size = 0.5)+facet_wrap(~scientifi
 ggplot(REF1cm, aes(length.cm, age))+geom_point(size = 0.5)+facet_wrap(~scientificname, scales = "free")+
   theme_bw()+labs(x = "Length (cm)", y = "Age (years)")
 ```
-
+\pagebreak
 # Acoustic registrations
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
@@ -473,7 +473,7 @@ ggplot(bath, aes(x=x, y=y))+
   geom_path(data=acu.dat.map.melt  %>% dplyr::filter(variable == "Total"),aes(LONGITUDE,LATITUDE), linejoin="round",lineend="square",alpha=0.4,colour="black",size=0.4)+
   scale_size_area(max_size=Bubble.size)+
   theme_bw()+
-  coord_cartesian(xlim = Xlim,ylim = Ylim)+
+  coord_map(xlim = Xlim,ylim = Ylim)+
   labs(x = NULL, y = NULL, size = "Sa - values", title=Title)
 ```
 
@@ -495,7 +495,7 @@ ggplot(bath, aes(x=x, y=y))+
             aes(LONGITUDE,LATITUDE), linejoin="round",lineend="square",alpha=0.4,colour="black",size=0.4)+
   scale_size_area(max_size=Bubble.size)+
   theme_bw()+
-  coord_cartesian(xlim = Xlim,ylim = Ylim)+
+  coord_map(xlim = Xlim,ylim = Ylim)+
   labs(x = NULL, y = NULL, size = "Sa - values", title=Title)
 ```
 
@@ -515,7 +515,7 @@ ggplot(bath, aes(x=x, y=y))+
             aes(LONGITUDE,LATITUDE), linejoin="round",lineend="square",alpha=0.4,colour="black",size=0.4)+
   scale_size_area(max_size=Bubble.size)+
   theme_bw()+
-  coord_cartesian(xlim = Xlim,ylim = Ylim)+
+  coord_map(xlim = Xlim,ylim = Ylim)+
   labs(x = NULL, y = NULL, size = "Sa - values", title=Title)
 
 ```
@@ -740,7 +740,7 @@ ggplot(bath, aes(x=x, y=y))+
   facet_wrap(~plotdepth)+
   scale_fill_distiller(palette="RdYlBu")+
   theme_bw()+
-  coord_cartesian(xlim = Xlim,ylim = Ylim)+
+  coord_map(xlim = Xlim,ylim = Ylim)+
   labs(x = "Longitude", y = "Latitude", fill="Mean temperature
 (deg C)")
 ```
@@ -755,7 +755,7 @@ ggplot(bath, aes(x=x, y=y))+
   facet_wrap(~plotdepth)+
   scale_fill_distiller(palette="BuPu", trans = "reverse", guide = guide_colorbar(reverse = T))+
   theme_bw()+
-  coord_cartesian(xlim = Xlim,ylim = Ylim)+
+  coord_map(xlim = Xlim,ylim = Ylim)+
   labs(x = "Longitude", y = "Latitude", fill="Mean salinity (PSU)")
 ```
 
@@ -888,7 +888,7 @@ ggplot(bath, aes(x=x, y=y))+
   geom_point(data = sightings, 
              aes(lon, lat, fill = species), shape = 21, alpha=0.8,
              inherit.aes = F)+
-  scale_size_area(max_size = 6)+  coord_cartesian(xlim = Xlim,ylim = Ylim)+
+  scale_size_area(max_size = 6)+  coord_map(xlim = Xlim,ylim = Ylim)+
   labs(x = "Longitude", y = "Latitude", fill = "Species")+
   scale_fill_manual(values = c("red", "blue", "orange", "yellow", "grey45", "purple", "green"))
 
@@ -910,7 +910,7 @@ ggplot(bath, aes(x=x, y=y))+
   geom_point(data = sightings %>% dplyr::filter(!species == "White-beaked dolphin"), 
              aes(lon, lat, size = number), alpha = 0.5, shape = 21, fill = "orange",
              inherit.aes = F)+facet_wrap(~species)+
-  scale_size_area(max_size = 5)+  coord_cartesian(xlim = Xlim,ylim = Ylim)+
+  scale_size_area(max_size = 5)+  coord_map(xlim = Xlim,ylim = Ylim)+
   labs(x = "Longitude", y = "Latitude", size = "Number of
 individuals")
 
@@ -924,7 +924,7 @@ ggplot(bath, aes(x=x, y=y))+
                size=0.5,show.legend = TRUE)+ 
   geom_contour(aes(z=z), breaks=c(0,1),color="darkgrey", size=.6) + 
   geom_point(data = effort.fix, aes(lon, lat), size = 0.25, inherit.aes = F)+
-  theme_bw()+coord_cartesian(xlim = Xlim,ylim = Ylim)+
+  theme_bw()+coord_map(xlim = Xlim,ylim = Ylim)+
   geom_point(data = effort.fix %>% dplyr::filter(code == "D"), aes(lon, lat),
              color="grey75", inherit.aes = F,size = 0.25)+
   geom_point(data = sightings %>% dplyr::filter(species == "White-beaked dolphin"), 
@@ -933,7 +933,7 @@ ggplot(bath, aes(x=x, y=y))+
   facet_wrap(~species)+scale_size_area(max_size = 5)+
   labs(x = "Longitude", y = "Latitude", size = "Number of individuals")
 ```
-
+\pagebreak
 # Seabirds (non ship followers)
 
 - NB work to generalise this code - 
@@ -1077,7 +1077,7 @@ ggplot(bath, aes(x=x, y=y))+
              aes(Lon, Lat, size = Num), alpha = 0.5, shape = 21, fill = "orange",
              inherit.aes = F)+facet_wrap(~usename)+
   scale_size_area(max_size = 5, breaks = c(1,2))+ 
-  coord_cartesian(xlim = Xlim,ylim = Ylim)+
+  coord_map(xlim = Xlim,ylim = Ylim)+
   labs(x = "Longitude", y = "Latitude", size = "Number of
 individuals")
 
@@ -1095,7 +1095,7 @@ ggplot(bath, aes(x=x, y=y))+
              aes(Lon, Lat, size = Num), alpha = 0.5, shape = 21, fill = "orange",
              inherit.aes = F)+facet_wrap(~usename)+
   scale_size_area(max_size = 6, breaks = c(3,5,10,15,20))+ 
-  coord_cartesian(xlim = Xlim,ylim = Ylim)+
+  coord_map(xlim = Xlim,ylim = Ylim)+
   labs(x = "Longitude", y = "Latitude", size = "Number of
 individuals")
 ```
@@ -1112,7 +1112,7 @@ ggplot(bath, aes(x=x, y=y))+
              aes(Lon, Lat, size = Num), alpha = 0.5, shape = 21, fill = "orange",
              inherit.aes = F)+facet_wrap(~usename)+
   scale_size_area(max_size = 8, breaks = c(20,40,60,100))+ 
-  coord_cartesian(xlim = Xlim,ylim = Ylim)+
+  coord_map(xlim = Xlim,ylim = Ylim)+
   labs(x = "Longitude", y = "Latitude", size = "Number of individuals")
 ```
 
