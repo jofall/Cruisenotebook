@@ -9,6 +9,7 @@ output:
     extra_dependencies: flafter
     toc: yes
     toc_depth: 3
+    number_sections: true
 classoption: landscape
 ---
 \fontsize{12}{18}
@@ -18,14 +19,24 @@ classoption: landscape
 knitr::opts_chunk$set(echo = TRUE, dpi = 220, dev = "CairoPNG")
 ```
 
-```{r, echo=FALSE, message=FALSE, warning=FALSE}
+```{r, echo=FALSE, message=FALSE}
 #Load required packages
-Packages <- c("plyr","tidyverse", "data.table", "XML", "reshape2", 
-              "chron", "proj4", "readxl", "readODS", "Cairo", "bookdown", "RstoxData")
-invisible(lapply(X = Packages,FUN = library, character.only = TRUE))
+Packages <- c("data.table", "reshape2", "readxl", "readODS", "worms","Cairo",
+              "bookdown", "RstoxData", "maps", "mapdata", "chron","tidyverse")
+
+invisible(lapply(Packages, FUN = function(x) {
+    if (!require(x, character.only = TRUE)) {
+      install.packages(x, dependencies = TRUE)
+      library(x, character.only = TRUE)
+    }
+  }
+))
 ```
 
 \pagebreak
+
+# Survey description and data availability
+
 
 # Cruise tracks and stations
 
@@ -35,6 +46,9 @@ Cruise tracks from the position log with points indicating start positions for d
 
 # Get bathymetry data from file
 bath1<-read_csv(file = "Data/GeoData/ETOPO1_nm4.csv")
+
+# Get map of Europe
+europe <- map_data("worldHires", c("Norway", "Sweden", "Russia", "Finland")) 
 
 # Define map extent and depth contours
 Ylim<-c(70,78.5)        #latitude
@@ -88,7 +102,8 @@ dataset <- dataset %>% dplyr::filter(!Loc.St.No %in% c(624,625))
 #Plot the cruise tracks and stations
 ggplot(bath, aes(x=x, y=y))+
   geom_contour(aes(z=z), breaks=d.contours,colour="lightblue", size=0.5,show.legend = TRUE)+ 
-  geom_contour(aes(z=z), breaks=c(0,1),color="darkgrey", size=.6) +
+  geom_map(data=europe, map=europe,  aes(x=long, y=lat, map_id=region),
+           color="gray50", fill="gray60")+
   geom_point(data=dataset %>% dplyr::filter(is.na(gear.text)), aes(Lon.dd, Lat.dd, group = Date), alpha=0.25, colour="grey45", size=0.1, inherit.aes = F)+
   geom_jitter(data = dataset %>% dplyr::filter(!is.na(gear.text)), aes(Lon.dd, Lat.dd, color=gear.text), size = 2, shape = 6, inherit.aes = F, stroke = 0.75, width = 0.25)+
   scale_color_viridis_d(na.translate=F)+
@@ -108,18 +123,34 @@ dd<- ReadBiotic(tokt)
 #Combine station and catch data
 stasamp <- right_join(dd[[1]]$fishstation,dd[[1]]$catchsample) %>% mutate(cr.kg.nm=catchweight/distance) %>% mutate(cr.n.nm=catchcount/distance)
 
+# Add scientific species names (code from Ibrahim Umar)
+
+# Source Edvin Fugleback's script for translating species names from aphia codes
+source("https://github.com/Sea2Data/cruisetools/raw/master/taxaAnnotation/annotateTaxa.R")
+
+# Get taxa taxaTable
+## Get list of aphias
+aphias <- unlist(unique(stasamp$aphia[!is.na(stasamp$aphia)])) 
+## Make taxa table 
+taxaTable <- makeTaxaTable(aphias)
+
+# Merge with NMD biotic data - removing scientificname column in stasamp data (NA values)
+stasamp <- left_join(stasamp[,-"scientificname"], 
+                     taxaTable %>% select(AphiaID,scientificname),
+                     by=c("aphia"="AphiaID"))
+
 #Legg til geartype i tekstformat
 stasamp$gear.text <- "Bottom trawl"
 stasamp$gear.text[stasamp$gear %in% c("3513", "3514")] <- "Pelagic trawl"
 stasamp$gear.text[stasamp$samplequality == "2"] <- "Trawling on registration"
 ```
-# Sampling depth for trawl hauls  
+## Trawl sampling effort
 
 `r length(unique(stasamp$station))` trawl hauls were taken during the survey, of which `r length(unique(stasamp$station[stasamp$gear.text == "Bottom trawl"]))` were bottom trawl, `r length(unique(stasamp$station[stasamp$gear.text == "Pelagic trawl"]))` pelagic trawl, and `r length(unique(stasamp$station[stasamp$gear.text == "Trawling on registration"]))` were trawling on registration. The trawl hauls covered a total distance of `r round((sum(dd[[1]]$fishstation$distance)*1852)/1000, digits = 1)` km (`r round((sum(dd[[1]]$fishstation$distance)), digits = 1)` nmi).  
   
 The sampling stations were located in areas with bottom depths from `r round(min((stasamp$bottomdepthstart+stasamp$bottomdepthstop)/2), digits =1)` m to `r round(max((stasamp$bottomdepthstart+stasamp$bottomdepthstop)/2), digits = 1)` m, and the fishing depth varied from `r round(min((stasamp$fishingdepthmin+stasamp$fishingdepthmax)/2), digits=1)` m to `r round(max((stasamp$fishingdepthmin+stasamp$fishingdepthmax)/2), digits=1)` m.
 
-## Mean bottom depth during trawl hauls
+### Mean bottom depth during trawl hauls
 ```{r, echo=FALSE, message=FALSE, fig.width=6, fig.height=2.5, out.width= "70%"}
 ## Depth at sampled stations - fish
 stdat <- dd[[1]]$fishstation
@@ -136,7 +167,7 @@ ggplot(stdat, aes((bottomdepthstart+bottomdepthstop)/2))+
   scale_y_continuous(breaks = c(0,2,4,6,8,10,12))
 ```
 
-## Mean fishing depth during trawl hauls (excluding pelagic hauls)
+### Mean fishing depth during trawl hauls (excluding pelagic hauls)
 ```{r, echo=FALSE, message=FALSE, fig.width=6, fig.height=3, out.width= "65%"}
 #Fishing depth
 ggplot(stdat %>% dplyr::filter(!gear.text == "Pelagic trawl"), aes((fishingdepthmin+fishingdepthmax)/2, fill = gear.text))+
@@ -147,23 +178,22 @@ ggplot(stdat %>% dplyr::filter(!gear.text == "Pelagic trawl"), aes((fishingdepth
 
 \pagebreak
 
-# Catch rates - biomass and number per nautical mile trawled for species registered in Sea2Data
+# Catch composition
 
 ## Species diversity
 
 ```{r,echo=FALSE, message=FALSE}
 #Sjekk hvilke arter som er vanligst
+options(dplyr.summarise.inform=F)
 tst<-stasamp %>% dplyr::group_by(scientificname) %>% 
   dplyr::summarise(meanW=mean(cr.kg.nm), meanN = mean(cr.n.nm),
                    minW = min(cr.kg.nm), maxW = max(cr.kg.nm),
                    minN = min(cr.n.nm), maxN = max(cr.n.nm))
 ```
 
-A total of `r length(unique(tst$scientificname))` species were registered in Sea2Data during the survey.
+A total of `r length(unique(tst$scientificname))` species were registered in the Sea2Data database during the survey.
 
-### Number of species identified versus the number of stations sampled
-
-```{r, echo = FALSE, message=FALSE, fig.width=3, fig.height=3, out.width= "35%"}
+```{r, echo = FALSE, message=FALSE, fig.width=7, fig.height=3.5, out.width= "70%"}
 #cumulative number of species vs number of stations
 
 nspec <- data.frame(station=unique(stasamp$station),
@@ -172,64 +202,75 @@ nspec <- data.frame(station=unique(stasamp$station),
 nspec$nstation <- seq(1:nrow(nspec))
 
 ggplot(nspec, aes(nstation, nspecies))+geom_line(size = 1)+theme_bw()+
-  labs(x = "Number of stations sampled", y = "Number of unique species identified")
+  labs(x = "Number of stations sampled", y = "Number of unique species identified",
+       title = "Number of species identified versus number of stations sampled")
 ```
 
 \pagebreak
 
-## Average catch rate by species for the 20 species with highest catch rates
+## Max catch rate by species for the 20 species with highest catch rates
 
 ### Bottom trawl
 ```{r,echo=FALSE, message=FALSE, fig.width=9, fig.height=3.3, out.width= "85%", fig.align="center", warning=FALSE}
-tst<-stasamp %>% dplyr::group_by(gear.text,scientificname) %>% 
+options(dplyr.summarise.inform=F)
+tst<-subset(stasamp, gearcondition==1) %>% 
+  dplyr::group_by(gear.text,scientificname) %>% 
   dplyr::summarise(meanW=mean(cr.kg.nm), meanN = mean(cr.n.nm),
                    minW = min(cr.kg.nm), maxW = max(cr.kg.nm),
                    minN = min(cr.n.nm), maxN = max(cr.n.nm))
+```
 
+The species with highest catch rates in bottom trawls were `r g<-tst %>% filter(gear.text == "Bottom trawl") %>% arrange(-maxW);g[1,1]` (`r unique(stasamp$commonname[stasamp$scientificname %in% toString(g[1,1])])`) by biomass, and `r g<-tst %>% filter(gear.text == "Bottom trawl") %>% arrange(-maxN);g[1,1]` (`r unique(stasamp$commonname[stasamp$scientificname %in% toString(g[1,1])])`) by number.
+
+```{r}
 gear <- "Bottom trawl"
 
 #Weight
 ggplot(tst %>% dplyr::filter(gear.text == gear & !is.na(scientificname)),
-       aes(reorder(scientificname, -meanW), meanW))+geom_col()+
+       aes(reorder(scientificname, -maxW), maxW))+geom_col()+
   # geom_errorbar(aes(ymin = minW, ymax = maxW))+
   coord_cartesian(xlim =c(1,20))+ #show the 20 species with highest catches
-  scale_y_continuous(expand=c(0,0), limits = c(0,max(tst$meanW[tst$gear.text==gear], na.rm=T)+2))+theme_bw()+
+  scale_y_continuous(expand=c(0,0), limits = c(0,max(tst$maxW[tst$gear.text==gear], na.rm=T)+2))+theme_bw()+
   theme(axis.text.x = element_text(angle = 35, colour = "red", size = 11),
         axis.title.x = element_blank())+
-  labs(x = "Taxon", y = "Mean catch rate (kg/nmi)", title = "Biomass")
+  labs(x = "Taxon", y = "Max catch rate (kg/nmi)", title = "Biomass")
 
 #Number
 ggplot(tst %>% dplyr::filter(gear.text == gear & !is.na(scientificname)),
-       aes(reorder(scientificname, -meanN), meanN))+geom_col()+
+       aes(reorder(scientificname, -maxN), maxN))+geom_col()+
   # geom_errorbar(aes(ymin = minN, ymax = maxN))+
   coord_cartesian(xlim =c(1,20))+ #show the 20 species with highest catches
-  scale_y_continuous(expand=c(0,0), limits = c(0,max(tst$meanN[tst$gear.text==gear], na.rm=T)+15))+#, limits = c(0,700))+
+  scale_y_continuous(expand=c(0,0), limits = c(0,max(tst$maxN[tst$gear.text==gear], na.rm=T)+15))+#, limits = c(0,700))+
   theme_bw()+theme(axis.text.x = element_text(angle = 35, colour = "red", size = 11), axis.title.x = element_blank())+
-  labs(x = "Taxon", y = "Mean catch rate (N/nmi)", title = "Number of individuals")
+  labs(x = "Taxon", y = "Max catch rate (N/nmi)", title = "Number of individuals")
 
 ```
+
 ### Pelagic trawl
+
+The species with highest catch rates in pelagic trawls were `r g<-tst %>% filter(gear.text == "Pelagic trawl") %>% arrange(-maxW);g[1,1]` (`r unique(stasamp$commonname[stasamp$scientificname %in% toString(g[1,1])])`) by biomass, and `r g<-tst %>% filter(gear.text == "Pelagic trawl") %>% arrange(-maxN);g[1,1]` (`r unique(stasamp$commonname[stasamp$scientificname %in% toString(g[1,1])])`) by number.
+
 ```{r, echo=FALSE, message=FALSE, fig.width=9, fig.height=3.3, out.width= "85%", fig.align="center", warning=FALSE}
 gear <- "Pelagic trawl"
 
 #Weight
 ggplot(tst %>% dplyr::filter(gear.text == gear & !is.na(scientificname)),
-       aes(reorder(scientificname, -meanW), meanW))+geom_col()+
+       aes(reorder(scientificname, -maxW), maxW))+geom_col()+
   # geom_errorbar(aes(ymin = minW, ymax = maxW))+
   coord_cartesian(xlim =c(1,20))+ #show the 20 species with highest catches
-  scale_y_continuous(expand=c(0,0), limits = c(0,max(tst$meanW[tst$gear.text==gear], na.rm=T)+2))+theme_bw()+
+  scale_y_continuous(expand=c(0,0), limits = c(0,max(tst$maxW[tst$gear.text==gear], na.rm=T)+2))+theme_bw()+
   theme(axis.text.x = element_text(angle = 35, colour = "red", size = 11),
         axis.title.x = element_blank())+
-  labs(x = "Taxon", y = "Mean catch rate (kg/nmi)", title = "Biomass")
+  labs(x = "Taxon", y = "Max catch rate (kg/nmi)", title = "Biomass")
 
 #Number
 ggplot(tst %>% dplyr::filter(gear.text == gear & !is.na(scientificname)),
-       aes(reorder(scientificname, -meanN), meanN))+geom_col()+
+       aes(reorder(scientificname, -maxN), maxN))+geom_col()+
   # geom_errorbar(aes(ymin = minN, ymax = maxN))+
   coord_cartesian(xlim =c(1,20))+ #show the 20 species with highest catches
-  scale_y_continuous(expand=c(0,0), limits = c(0,max(tst$meanN[tst$gear.text==gear], na.rm=T)+15))+#, limits = c(0,700))+
+  scale_y_continuous(expand=c(0,0), limits = c(0,max(tst$maxN[tst$gear.text==gear], na.rm=T)+15))+#, limits = c(0,700))+
   theme_bw()+theme(axis.text.x = element_text(angle = 35, colour = "red", size = 11), axis.title.x = element_blank())+
-  labs(x = "Taxon", y = "Mean catch rate (N/nmi)", title = "Number of individuals")
+  labs(x = "Taxon", y = "Max catch rate (N/nmi)", title = "Number of individuals")
 ```
 
 ## Spatial variation in catches of common species
@@ -268,10 +309,8 @@ for(i in 1:length(species)) {
         size = 0.5,
         show.legend = TRUE
       ) +
-      geom_contour(aes(z = z),
-                   breaks = c(0, 1),
-                   color = "darkgrey",
-                   size = .6) +
+      geom_map(data=europe, map=europe,  aes(x=long, y=lat, map_id=region),
+           color="gray50", fill="gray60")+
       geom_point(
         data = coord.track,
         aes(Lon.dd, Lat.dd, group = Date),
@@ -314,10 +353,8 @@ for(i in 1:length(species)) {
         size = 0.5,
         show.legend = TRUE
       ) +
-      geom_contour(aes(z = z),
-                   breaks = c(0, 1),
-                   color = "darkgrey",
-                   size = .6) +
+      geom_map(data=europe, map=europe,  aes(x=long, y=lat, map_id=region),
+           color="gray50", fill="gray60")+
       geom_point(
         data = coord.track,
         aes(Lon.dd, Lat.dd, group = Date),
@@ -400,6 +437,7 @@ ggplot(REF1cm, aes(length.cm, age))+geom_point(size = 0.5)+facet_wrap(~scientifi
   theme_bw()+labs(x = "Length (cm)", y = "Age (years)")
 ```
 \pagebreak
+
 # Acoustic registrations
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
@@ -466,7 +504,8 @@ Title <- paste("Ecosystem survey Johan Hjort","|",toString(Yr),"|",toString(Fr),
 #Plot total acoustic backscatter
 ggplot(bath, aes(x=x, y=y))+
   geom_contour(aes(z=z), breaks=d.contours,colour="lightblue", size=0.5,show.legend = TRUE)+ 
-  geom_contour(aes(z=z), breaks=c(0,1),color="darkgrey", size=.6) + #for coastline only as line, activate this and skip geom_polygon
+  geom_map(data=europe, map=europe,  aes(x=long, y=lat, map_id=region),
+           color="gray50", fill="gray60")+  
   geom_point(data=acu.dat.map.melt %>% dplyr::filter(variable == "Total"),
              aes(LONGITUDE,LATITUDE,size = value),shape=21, alpha = 0.3, colour = "black",fill="orange",stroke = .2)+
   facet_wrap(~variable)+
@@ -486,8 +525,9 @@ ggplot(bath, aes(x=x, y=y))+
 pelagics <- c("Plankton","Polar cod","Herring","Capelin","0-group","Blue whiting")
 
 ggplot(bath, aes(x=x, y=y))+
-  geom_contour(aes(z=z), breaks=d.contours,colour="lightblue", size=0.5,show.legend = TRUE)+ 
-  geom_contour(aes(z=z), breaks=c(0,1),color="darkgrey", size=.6) + #for coastline only as line, activate this and skip geom_polygon
+  geom_contour(aes(z=z), breaks=d.contours,colour="lightblue", size=0.5,show.legend = TRUE)+
+  geom_map(data=europe, map=europe,  aes(x=long, y=lat, map_id=region),
+           color="gray50", fill="gray60")+
   geom_point(data=acu.dat.map.melt %>% dplyr::filter(variable %in% pelagics),
              aes(LONGITUDE,LATITUDE,size = value),shape=21, alpha = 0.3, colour = "black",fill="orange",stroke = .2)+
   facet_wrap(~variable)+
@@ -506,8 +546,9 @@ ggplot(bath, aes(x=x, y=y))+
 demersals <- c("Saithe", "Norway pout", "Redfish","Haddock","Cod")
 
 ggplot(bath, aes(x=x, y=y))+
-  geom_contour(aes(z=z), breaks=d.contours,colour="lightblue", size=0.5,show.legend = TRUE)+ 
-  geom_contour(aes(z=z), breaks=c(0,1),color="darkgrey", size=.6) + #for coastline only as line, activate this and skip geom_polygon
+  geom_contour(aes(z=z), breaks=d.contours,colour="lightblue", size=0.5,show.legend = TRUE)+
+  geom_map(data=europe, map=europe,  aes(x=long, y=lat, map_id=region),
+           color="gray50", fill="gray60")+
   geom_point(data=acu.dat.map.melt %>% dplyr::filter(variable %in% demersals),
              aes(LONGITUDE,LATITUDE,size = value),shape=21, alpha = 0.3, colour = "black",fill="orange",stroke = .2)+
   facet_wrap(~variable)+
@@ -730,11 +771,12 @@ ggplot(ctd, aes(salinity_PSU))+geom_histogram(color="black")+theme_bw()+
 
 ## Variation in temperature and salinity with bathymetry and geographical location
 
-```{r, echo=FALSE, message=FALSE, fig.width=9, fig.height=4, out.width= "75%", warning=FALSE, fig.align="center"}
+```{r, echo=FALSE, message=FALSE, fig.width=9, fig.height=4, out.width= "100%", warning=FALSE, fig.align="center"}
 
 ggplot(bath, aes(x=x, y=y))+
   geom_contour(aes(z=z), breaks=d.contours,colour="lightblue", size=0.5,show.legend = TRUE)+ 
-  geom_contour(aes(z=z), breaks=c(0,1),color="darkgrey", size=.6) +
+  geom_map(data=europe, map=europe,  aes(x=long, y=lat, map_id=region),
+           color="gray50", fill="gray60")+
   geom_point(data=coord.track, aes(Lon.dd, Lat.dd, group = Date), alpha=0.1, colour="grey45", size=0.1, inherit.aes = F)+
   geom_point(data=ctd.plot, aes(Lon, Lat, fill = mean_temp), size = 4, color="black", shape = 21)+
   facet_wrap(~plotdepth)+
@@ -745,12 +787,13 @@ ggplot(bath, aes(x=x, y=y))+
 (deg C)")
 ```
 
-```{r, echo=FALSE, message=FALSE, fig.width=9, fig.height=4, out.width= "75%", warning=FALSE, fig.align="center"}
+```{r, echo=FALSE, message=FALSE, fig.width=9, fig.height=4, out.width= "100%", warning=FALSE, fig.align="center"}
 
 ggplot(bath, aes(x=x, y=y))+
   geom_contour(aes(z=z), breaks=d.contours,colour="lightblue", size=0.5,show.legend = TRUE)+ 
-  geom_contour(aes(z=z), breaks=c(0,1),color="darkgrey", size=.6) +
- geom_point(data=coord.track, aes(Lon.dd, Lat.dd, group = Date), alpha=0.1, colour="grey45", size=0.1, inherit.aes = F)+
+  geom_map(data=europe, map=europe,  aes(x=long, y=lat, map_id=region),
+           color="gray50", fill="gray60")+
+  geom_point(data=coord.track, aes(Lon.dd, Lat.dd, group = Date), alpha=0.1, colour="grey45", size=0.1, inherit.aes = F)+
   geom_point(data=ctd.plot, aes(Lon, Lat, fill = mean_salinity), size = 4, color="black", shape = 21)+
   facet_wrap(~plotdepth)+
   scale_fill_distiller(palette="BuPu", trans = "reverse", guide = guide_colorbar(reverse = T))+
@@ -881,7 +924,8 @@ effort.fix$code <- factor(effort.fix$code, levels = c("D", "F", "T"))
 
 ggplot(bath, aes(x=x, y=y))+
   geom_contour(aes(z=z), breaks=d.contours,colour="lightblue", size=0.5,show.legend = TRUE)+ 
-  geom_contour(aes(z=z), breaks=c(0,1),color="darkgrey", size=.6) + 
+  geom_map(data=europe, map=europe,  aes(x=long, y=lat, map_id=region),
+           color="gray50", fill="gray60")+
   geom_point(data = effort.fix, aes(lon, lat), size = 0.25, inherit.aes = F)+theme_bw()+
   geom_point(data = effort.fix %>% dplyr::filter(code == "D"), aes(lon, lat),
              color="grey75", inherit.aes = F,size = 0.25)+
@@ -903,7 +947,8 @@ Here the circles are proportional to the number of individuals observed at the l
 ```{r, echo=FALSE, message=FALSE, fig.width=9, fig.height=5.5, out.width="90%", warning=FALSE, fig.align="center"}
 ggplot(bath, aes(x=x, y=y))+
   geom_contour(aes(z=z), breaks=d.contours,colour="lightblue", size=0.5,show.legend = TRUE)+ 
-  geom_contour(aes(z=z), breaks=c(0,1),color="darkgrey", size=.6) + 
+  geom_map(data=europe, map=europe,  aes(x=long, y=lat, map_id=region),
+           color="gray50", fill="gray60")+
   geom_point(data = effort.fix, aes(lon, lat), size = 0.25, inherit.aes = F)+theme_bw()+
   geom_point(data = effort.fix %>% dplyr::filter(code == "D"), aes(lon, lat),
              color="grey75", inherit.aes = F,size = 0.25)+
@@ -922,7 +967,8 @@ individuals")
 ggplot(bath, aes(x=x, y=y))+
   geom_contour(aes(z=z), breaks=d.contours,colour="lightblue", 
                size=0.5,show.legend = TRUE)+ 
-  geom_contour(aes(z=z), breaks=c(0,1),color="darkgrey", size=.6) + 
+  geom_map(data=europe, map=europe,  aes(x=long, y=lat, map_id=region),
+           color="gray50", fill="gray60")+
   geom_point(data = effort.fix, aes(lon, lat), size = 0.25, inherit.aes = F)+
   theme_bw()+coord_map(xlim = Xlim,ylim = Ylim)+
   geom_point(data = effort.fix %>% dplyr::filter(code == "D"), aes(lon, lat),
@@ -954,7 +1000,7 @@ dat <- paste0("Data/Bird/",list.files(path="Data/Bird", pattern = ".xls"))
 speccode <- read_excel(dat,sheet = 1,range = "A3:F37")
 
 #fix names
-speccode <- speccode %>% rename(group= `...1`) %>% dplyr::select(code,group, Latinsk, Norsk, Engelsk) %>%
+speccode <- speccode %>% dplyr::rename(group= `...1`) %>% dplyr::select(code,group, Latinsk, Norsk, Engelsk) %>%
   dplyr::filter(!is.na(code))
 
 for(i in 1:nrow(speccode)){
@@ -980,7 +1026,7 @@ birds.nona <- birds %>% dplyr::filter(!is.na(Species))
 
 #a few mising hour entries for observations as well, NB this removes a few
 #data points
-birds.nona <- birds.nona %>% dplyr::filter(!is.na(Hrs)) %>% rename(Date = X)
+birds.nona <- birds.nona %>% dplyr::filter(!is.na(Hrs)) %>% dplyr::rename(Date = X)
 
 for(i in 1:nrow(birds.nona)){
   if(nchar(birds.nona[i,8])<2) birds.nona[i,8] <- paste0("0",birds.nona[i,8])
@@ -996,7 +1042,8 @@ birdpos <- dataset %>% select(Date,Time, Lat = Lat.dd, Lon = Lon.dd)
 birdpos$Date <- str_replace_all(birdpos$Date,"-", "/")
 
 #combine
-birdsdat <- birds.nona %>% select(Date, Time, Species, Num) %>% rename(code = Species)
+birdsdat <- birds.nona %>% select(Date, Time, Species, Num) %>% 
+  dplyr::rename(code = Species)
 birdsdat <- left_join(birdsdat, birdpos)
 
 #add species key
@@ -1010,7 +1057,7 @@ for(i in 1:nrow(birdsdat)){
 
 #use the English name, but if there is none, use the Latin one
 birdsdat <- birdsdat %>% 
-  mutate(usename = ifelse(is.na(Engelsk)==TRUE, Latinsk, Engelsk))
+  dplyr::mutate(usename = ifelse(is.na(Engelsk)==TRUE, Latinsk, Engelsk))
 
 #most abundant (total abundance)
 tst <- birdsdat %>% group_by(usename) %>% summarise(tot = sum(Num)) %>% arrange(-tot)
@@ -1069,7 +1116,8 @@ birdsdat <- left_join(birdsdat, tst)
 #species occuring in low numbers
 ggplot(bath, aes(x=x, y=y))+
   geom_contour(aes(z=z), breaks=d.contours,colour="lightblue", size=0.5,show.legend = TRUE)+ 
-  geom_contour(aes(z=z), breaks=c(0,1),color="darkgrey", size=.6) + 
+  geom_map(data=europe, map=europe,  aes(x=long, y=lat, map_id=region),
+           color="gray50", fill="gray60")+
   geom_point(data = effort.fix, aes(lon, lat), size = 0.25, inherit.aes = F)+theme_bw()+
   geom_point(data = effort.fix %>% dplyr::filter(code == "D"), aes(lon, lat),
              color="grey75", inherit.aes = F,size = 0.2)+
@@ -1087,7 +1135,8 @@ individuals")
 #species occuring in medium numbers
 ggplot(bath, aes(x=x, y=y))+
   geom_contour(aes(z=z), breaks=d.contours,colour="lightblue", size=0.5,show.legend = TRUE)+ 
-  geom_contour(aes(z=z), breaks=c(0,1),color="darkgrey", size=.6) + 
+  geom_map(data=europe, map=europe,  aes(x=long, y=lat, map_id=region),
+           color="gray50", fill="gray60")+
   geom_point(data = effort.fix, aes(lon, lat), size = 0.25, inherit.aes = F)+theme_bw()+
   geom_point(data = effort.fix %>% dplyr::filter(code == "D"), aes(lon, lat),
              color="grey75", inherit.aes = F,size = 0.2)+
@@ -1104,7 +1153,8 @@ individuals")
 #species occuring in high numbers
 ggplot(bath, aes(x=x, y=y))+
   geom_contour(aes(z=z), breaks=d.contours,colour="lightblue", size=0.5,show.legend = TRUE)+ 
-  geom_contour(aes(z=z), breaks=c(0,1),color="darkgrey", size=.6) + 
+  geom_map(data=europe, map=europe,  aes(x=long, y=lat, map_id=region),
+           color="gray50", fill="gray60")+
   geom_point(data = effort.fix, aes(lon, lat), size = 0.25, inherit.aes = F)+theme_bw()+
   geom_point(data = effort.fix %>% dplyr::filter(code == "D"), aes(lon, lat),
              color="grey75", inherit.aes = F,size = 0.25)+
