@@ -98,7 +98,7 @@ Line numbers refer to the file *Report_BESS.Rmd*
 
 1. Remove line 3 if you do not wish to have the HI logo.
 
-2. Change title and author.
+2. Change title and author. Tip: you can insert line breaks in the title by adding two trailing spaces at the end of a line (put cursor where you want a line break and press space bar twice).
 
 3. Check the r packages specified in the second r code chunk (lines 23-25), and install any packages you do not have on your computer.
 
