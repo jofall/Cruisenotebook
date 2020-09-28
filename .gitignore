@@ -28,6 +28,10 @@ rsconnect/
 *.Rproj
 # Ignore the raw data we use to plot
 Data/
+ACOUSTIC
+CATCH_MEASUREMENTS
+PHYSICS
+CRUISE_LOG
 Report_Winter_Survey_cache
 Report_Winter_Survey_files
 IBTS_CruiseNotebook
