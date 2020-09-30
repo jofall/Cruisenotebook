@@ -16,13 +16,45 @@ classoption: landscape
 \selectfont
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, dpi = 220, dev = "CairoPNG")
+knitr::opts_chunk$set(echo = TRUE, dpi = 300, dev = "CairoPNG")
+```
+
+```{r customise report to cruise, echo=FALSE, message=FALSE}
+# Define cruise directory. If using R studio project directory, set mydir <- NULL
+mydir <- "//ces.imr.no/cruise_data/2020/S2020818_PEROS_3317"
+
+# Define depth contours
+d.contours<-c(-50,-200,-400,-500) #Depth contours for plots with bathymetry
+
+# Define the countries to show in the maps 
+# (the map package uses country names from the 1980s, use: 
+# regions <- map_data("worldHires")); regions[grepl("U", regions)] 
+# to find country/region names starting with the letter defined in the grepl function)
+regions <- c("Norway", "Sweden", "Finland", "USSR", "UK")
+
+# Select species for distribution maps (scientific names starting with a capital letter)
+species <- c("Mallotus villosus", "Boreogadus saida","Micromesistius poutassou", "Clupea harengus", 
+             "Melanogrammus aeglefinus", "Gadus morhua", "Sebastes mentella", "Sebastes norvegicus", 
+             "Sebastes viviparus", "Pandalus borealis")
+
+# Set max size of bubbles in species distribution plots
+Bubble.size<-8      
+
+# Select metric for catches in species distribution plots (none, one or both)
+numplot <- 0 #catches in numbers/nmi
+bioplot <- 1 #catches in kg/nmi
+```
+
+```{r setup space between plots, echo=FALSE, message=FALSE}
+my_plot_hook <- function(x, options)
+  paste("\n", knitr::hook_plot_tex(x, options), "\n")
+knitr::knit_hooks$set(plot = my_plot_hook)
 ```
 
 ```{r install and load packages, echo=FALSE, message=FALSE}
 #Load required packages
 Packages <- c("data.table", "reshape2", "readxl", "readODS", "worms","Cairo",
-              "bookdown", "RstoxData", "maps", "mapdata", "chron","tidyverse")
+              "bookdown", "RstoxData", "maps", "mapdata", "chron","tidyverse", "ggforce", "kableExtra")
 
 invisible(lapply(Packages, FUN = function(x) {
     if (!require(x, character.only = TRUE)) {
@@ -31,35 +63,14 @@ invisible(lapply(Packages, FUN = function(x) {
     }
   }
 ))
-
 ```
 
-```{r customise report to cruise, echo=FALSE, message=FALSE}
-
+```{r directory check, echo=FALSE, message=FALSE}
 # Directory check - controls which parts of the script that will be run
-ACO <- dir.exists("ACOUSTIC/LSSS/REPORTS")
-BIO <- dir.exists("CATCH_MEASUREMENTS/BIOTIC")
-CTD <- dir.exists("PHYSICS/CTD/CTD_DATA")
-TRA <- dir.exists("CRUISE_LOG/TRACK")
-
-# Define map extent and depth contours
-Ylim<-c(70,78.5) # Latitude range
-Xlim<-c(8, 38)   # Longitude range
-d.contours<-c(-100, -300,-500) #Depth contours for plots with bathymetry
-
-# Define the countries to show in the maps
-europe <- map_data("worldHires", c("Norway", "Sweden", "Russia", "Finland")) 
-
-# Select species for distribution maps
-species <- c("Mallotus villosus", "Boreogadus saida","Micromesistius poutassou", "Clupea harengus", "Melanogrammus aeglefinus", "Gadus morhua", "Sebastes mentella", "Sebastes norvegicus", "Sebastes viviparus", "Pandalus borealis")
-
-# Set max size of bubbles in species distribution plots
-Bubble.size<-6       
-
-# Select metric for catches in species distribution plots (none, one or both)
-numplot <- 0 #do you want to plot catches in numbers/nmi?
-bioplot <- 1 #do you want to plot catches in kg/nmi?
-
+ACO <- ifelse(is.null(mydir),dir.exists("ACOUSTIC/LSSS/REPORTS"), dir.exists(paste0(mydir,"/ACOUSTIC/LSSS/REPORTS")))
+BIO <- ifelse(is.null(mydir), dir.exists("BIOLOGY/CATCH_MEASUREMENTS/BIOTIC"), dir.exists(paste0(mydir,"/BIOLOGY/CATCH_MEASUREMENTS/BIOTIC")))
+CTD <- ifelse(is.null(mydir), dir.exists("PHYSICS/CTD/CTD_DATA"), dir.exists(paste0(mydir,"/PHYSICS/CTD/CTD_DATA")))
+TRA <- ifelse(is.null(mydir), dir.exists("CRUISE_LOG/TRACK"), dir.exists(paste0(mydir,"/CRUISE_LOG/TRACK")))
 ```
 
 \pagebreak
@@ -70,36 +81,35 @@ bioplot <- 1 #do you want to plot catches in kg/nmi?
 
 # Cruise tracks and stations
 
-Cruise tracks from the position log with points indicating start positions for different sampling gear. The points are jittered slightly for better visual representation:
+Cruise tracks from the position log with points indicating start positions for different sampling gear. Points are jittered.
 
-```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width=8, fig.height=6, out.width= "75%", fig.align="center"}
-if(TRA == TRUE){
- # Get bathymetry data from file
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width=8, fig.height=6, out.width= "80%", fig.align="center", eval = TRA}
+# Get bathymetry data from file
 bath1<-read_csv(file = "Data/GeoData/ETOPO1_nm4.csv")
 
-#reduce the resolution of depth contours (to increase speed when writing to file)
-bath<-subset(bath1, bath1$y>(Ylim[1]-2) & (bath1$y<Ylim[2]+2) & bath1$ x>(Xlim[1]-2)& bath1$x<(Xlim[2]+2) & bath1$z<=(d.contours[1]+1500) & bath1$z>=(d.contours[length(d.contours)]-1500))
-
 #create a list of the position files from the target directory
-file_list <- list.files(path="Data/Track", pattern = ".csv")
+file_list <- if(is.null(mydir)){
+  list.files(path = "CRUISE_LOG/TRACK",pattern = ".csv")} else
+    list.files(path=paste0(mydir,"/CRUISE_LOG/TRACK"),pattern = ".csv")
 
 #initiate a blank data frame, each iteration of the loop will append the data from the given file to this variable
 dataset <- data.frame()
 
 #set temporary working directory
-setwd("Data/Track")
+invisible(ifelse(is.null(mydir),setwd("CRUISE_LOG/TRACK"),
+       setwd(paste0(mydir,"/CRUISE_LOG/TRACK"))))
 
 for (i in 1:length(file_list)){
-  temp_data <- fread(file_list[i], stringsAsFactors = F,header = T, skip = 2,fill = T,strip.white = FALSE) #read in files using the fread function from the data.table package
+  temp_data <- data.table::fread(file_list[i], stringsAsFactors = F,header = T, skip = 2,fill = T,strip.white = FALSE) #read in files using the fread function from the data.table package
   #creating a new column that indicates which date each file comes from
   temp_data$Date <- strsplit(gsub(".csv", "", file_list[i]), "s")[[1]][2]
   temp_data$Date <- as.Date(temp_data$Date, format = "%d-%m-%Y")
   #The latitude column is in format "DDMM.MMMM N"
   #The longitude column is in format "0DDMM.MMMM E"
   #Create new columns with lon and lat in decimal degrees
-  temp_data <- temp_data %>% separate(Latitude, into = c("DD", "MM", "x1"), 
+  temp_data <- temp_data %>% tidyr::separate(Latitude, into = c("DD", "MM", "x1"), 
                                       sep = c(2,9), remove = F) %>% 
-    separate(Longitude, into = c("x1.lon", "DD.lon", "MM.lon", "x2.lon"), 
+    tidyr::separate(Longitude, into = c("x1.lon", "DD.lon", "MM.lon", "x2.lon"), 
              sep = c(1,3,10), remove = F)
   temp_data$DD <- as.numeric(temp_data$DD)
   temp_data$DD.lon <- as.numeric(temp_data$DD.lon)
@@ -117,34 +127,73 @@ for (i in 1:length(file_list)){
   rm(temp_data)
   }
 
+#Define plotting symbols
+dataset$symbol[grepl("^Pelagic",dataset$gear.text)] <- 2
+dataset$symbol[grepl("^Bottom",dataset$gear.text)] <- 0
+dataset$symbol[grepl("^Bom",dataset$gear.text)] <- 0
+dataset$symbol[grepl("^CTD",dataset$gear.text)] <- 13
+dataset$symbol[grepl("^Håv",dataset$gear.text)] <- 1
+dataset$symbol[grepl("^Mik",dataset$gear.text)] <- 1
+dataset$symbol[grepl("^Multinet",dataset$gear.text)] <- 5
+dataset$symbol[grepl("^Garn",dataset$gear.text)] <- 12
+dataset$symbol[grepl("^Snurrevad",dataset$gear.text)] <- 8
+dataset$symbol[grepl("^Not",dataset$gear.text)] <- 9
+dataset$symbol[grepl("^Other",dataset$gear.text)] <- 3
+
+sym <- c(dataset %>% select(gear.text, symbol) %>% unique() %>% select(symbol))
+val <- c(dataset %>% select(gear.text, symbol) %>% unique() %>% select(gear.text))
+
+#Get mapdata
+europe <- map_data("worldHires", region = regions) 
+
+# Define limits of map
+Xlim <- c(min(dataset$Lon.dd, na.rm = T)-0.5, max(dataset$Lon.dd, na.rm = T)+0.5)
+Ylim <- c(min(dataset$Lat.dd, na.rm = T)-0.5, max(dataset$Lat.dd, na.rm = T)+0.5)
+
+#reduce the resolution of depth contours (to increase speed when writing to file)
+bath<-subset(bath1, bath1$y>(Ylim[1]-2) & (bath1$y<Ylim[2]+2) & bath1$ x>(Xlim[1]-2)& bath1$x<(Xlim[2]+2) & bath1$z<=(d.contours[1]+1500) & bath1$z>=(d.contours[length(d.contours)]-1500))
+
 #Plot the cruise tracks and stations
+set.seed(1) #set seed for fixed jittering of points
 ggplot(bath, aes(x=x, y=y))+
-  geom_contour(aes(z=z), breaks=d.contours,colour="lightblue", size=0.5,show.legend = TRUE)+ 
+  geom_contour(aes(z=z), breaks=d.contours,colour="lightblue", 
+               size=0.25,show.legend = TRUE)+ 
   geom_map(data=europe, map=europe,  aes(x=long, y=lat, map_id=region),
-           color="gray50", fill="gray60")+
-  geom_point(data=dataset, aes(Lon.dd, Lat.dd, group = Date), alpha=0.25, colour="grey45", size=0.05, inherit.aes = F)+
-  geom_jitter(data = dataset %>% dplyr::filter(!gear.text == "  -->" &
+           color="gray60", fill="lightyellow2", size = 0.25)+
+  geom_point(data=dataset, aes(Lon.dd, Lat.dd, group = Date), alpha=0.1,
+             colour="grey65", size=0.005, inherit.aes = F)+
+  geom_point(data = dataset %>% dplyr::filter(!gear.text == "  -->" &
                                                 !grepl("stop",gear.text)), 
-             aes(Lon.dd, Lat.dd, shape=gear.text), size = 2, 
-             inherit.aes = F, width = 0.1)+
-  scale_color_viridis_d(na.translate=F)+
+             aes(Lon.dd, Lat.dd,shape = gear.text), size = 2, stroke = 0.25,
+             inherit.aes = F, position = ggforce::position_jitternormal(sd_y = 0.08, sd_x = 0.35))+
+  scale_shape_manual(breaks = val$gear.text, values = as.numeric(sym$symbol))+
   theme_bw()+
   coord_map(xlim = Xlim,ylim = Ylim)+
-  labs(x = "Longitude", y = "Latitude", color="Sampling gear")
-}
-
+  labs(x = "Longitude", y = "Latitude", shape="Sampling gear")
 ```
+
 \pagebreak
+
 ```{r read in biotic data, echo = FALSE, message=FALSE, warning = FALSE, results='hide', eval=BIO}
 #specify file path
-tokt <- paste0("CATCH_MEASUREMENTS/BIOTIC/",
-               list.files(path="CATCH_MEASUREMENTS/BIOTIC", pattern = ".xml"))
+tokt <- if(is.null(mydir) == TRUE){
+  paste0("BIOLOGY/CATCH_MEASUREMENTS/BIOTIC/", list.files(path = "BIOLOGY/CATCH_MEASUREMENTS/BIOTIC",pattern = ".xml"))} else{
+    paste0(mydir, "/BIOLOGY/CATCH_MEASUREMENTS/BIOTIC/", list.files(path=paste0(mydir,"/BIOLOGY/CATCH_MEASUREMENTS/BIOTIC"),pattern = ".xml"))
+  }
+
+#In case of more than one xml file, choose the official biotic one containing a dash followed by the survey year (this relies on unofficial files not using this naming, needs to be tested out)
+if(length(tokt)>1) tokt <- 
+  tokt[grepl(paste0("-",format(dataset$Date, "%Y"))[1], tokt)]
 
 #read in with function ReadBiotic from RstoxData
 dd<- ReadBiotic(tokt)
 
 #Combine station and catch data
-stasamp <- right_join(dd[[1]]$fishstation,dd[[1]]$catchsample) %>% mutate(cr.kg.nm=catchweight/distance) %>% mutate(cr.n.nm=catchcount/distance)
+if("catchweight" %in% names(dd[[1]]$catchsample)){
+  stasamp <- right_join(dd[[1]]$fishstation,dd[[1]]$catchsample) %>% mutate(cr.kg.nm=catchweight/distance) %>% mutate(cr.n.nm=catchcount/distance)
+} else if("weight" %in% names(dd[[1]]$catchsample)){
+  stasamp <- right_join(dd[[1]]$fishstation,dd[[1]]$catchsample) %>% mutate(cr.kg.nm=weight/distance) %>% mutate(cr.n.nm=count/distance)
+}
 
 # Add scientific species names (code from Ibrahim Umar)
 
@@ -168,6 +217,7 @@ stasamp$gear.text[grepl("^30",stasamp$gear)] <- "Bottom trawl"
 stasamp$gear.text[grepl("^31",stasamp$gear)] <- "Bottom trawl"
 stasamp$gear.text[grepl("^32",stasamp$gear)] <- "Bottom trawl"
 stasamp$gear.text[grepl("^34",stasamp$gear)] <- "Unspecified trawl"
+stasamp$gear.text[grepl("^34",stasamp$gear)] <- "Unspecified trawl"
 stasamp$gear.text[grepl("^35",stasamp$gear)] <- "Pelagic trawl"
 stasamp$gear.text[grepl("^36",stasamp$gear)] <- "Danish seine"
 stasamp$gear.text[grepl("^37",stasamp$gear)] <- "Seine"
@@ -175,9 +225,13 @@ stasamp$gear.text[grepl("^40",stasamp$gear)] <- "Gill net"
 stasamp$gear.text[grepl("^41",stasamp$gear)] <- "Gill net"
 
 # Station data
-stdat <- stasamp %>% select(serialnumber, station, stationstarttime, longitudestart,
-                            latitudestart, bottomdepthstart, bottomdepthstop,
-                            fishingdepthmin, fishingdepthmax, gear.text, samplequality) %>% unique()
+stdat <- stasamp %>% select(starts_with("serial"), station, ends_with("time"),
+                            longitudestart,latitudestart, bottomdepthstart,
+                            bottomdepthstop,fishingdepthmin, fishingdepthmax,
+                            gear.text, contains("samplequality")) %>% unique()
+
+# Plotting criteria
+regcatch <- ifelse(length(stasamp$gear.text[!is.na(stasamp$gear.text)])>0, TRUE, FALSE)
 ```
 
 ```{r sample statistics, eval = BIO, echo = FALSE, message = FALSE, results = 'asis'}
@@ -187,26 +241,26 @@ cat("Total number of hauls taken during the survey:")
 ```
 `r if(BIO==TRUE) nrow(stdat)`
 
-```{r sample statistics2, eval = BIO, echo = FALSE, message = FALSE, results = 'asis'}
-cat("Number of samples by gear type:")
+```{r sample statistics2, eval = ifelse(regcatch == FALSE, regcatch,BIO), echo = FALSE, message = FALSE, results = 'asis'}
+cat("\nNumber of samples by gear type:")
+knitr::kable(table(stdat$gear.text),col.names = c("Gear", "N")) %>% kable_styling(font_size = 11,position = "left")
 ```
-`r if(BIO==TRUE) table(stdat$gear.text)`
-
-```{r sample statistics3, eval = BIO, echo = FALSE, message = FALSE, results = 'asis'}
-cat("Range of bottom depths at sampling stations (m):")
+  
+```{r sample statistics3, eval = ifelse(regcatch == FALSE, regcatch,BIO), echo = FALSE, message = FALSE, results = 'asis'}
+cat("\nRange of bottom depths at sampling stations (m):")
 ```
 `r if(BIO==TRUE) round(range((stasamp$bottomdepthstart+stasamp$bottomdepthstop)/2), digits =1)`
 
-```{r trawl statistics4, eval = BIO, echo = FALSE, message = FALSE, results = 'asis'}
-cat("Fishing depth range (m):")
+```{r trawl statistics4, eval = ifelse(regcatch == FALSE, regcatch,BIO), echo = FALSE, message = FALSE, results = 'asis'}
+cat("\nFishing depth range (m):")
 ```
 `r if(BIO==TRUE) round(range((stasamp$fishingdepthmin+stasamp$fishingdepthmax)/2), digits=1)`
 
-```{r fig bottom depth, eval = BIO, echo = FALSE, message = FALSE, results = 'asis'}
+```{r fig bottom depth, eval = ifelse(regcatch == FALSE, regcatch,BIO), echo = FALSE, message = FALSE, results = 'asis'}
 cat("### Mean bottom depth during hauls  ")
 ```
 
-```{r, echo=FALSE, message=FALSE, fig.width=6, fig.height=2.5, out.width= "70%", eval = BIO}
+```{r, echo=FALSE, message=FALSE, fig.width=8, fig.height=3, out.width= "75%", eval = ifelse(regcatch == FALSE, regcatch,BIO)}
 #Bottom depth
 ggplot(stdat, aes((bottomdepthstart+bottomdepthstop)/2))+
   geom_histogram(color="black", position = "dodge")+
@@ -215,24 +269,26 @@ ggplot(stdat, aes((bottomdepthstart+bottomdepthstop)/2))+
   scale_y_continuous(breaks = c(0,2,4,6,8,10,12))
 ```
 
-```{r, eval = BIO, echo = FALSE, message = FALSE, results = 'asis'}
+```{r, eval = ifelse(regcatch == FALSE, regcatch,BIO), echo = FALSE, message = FALSE, results = 'asis'}
 cat("### Mean fishing depth during hauls\n")
 ```
 
-```{r, echo=FALSE, message=FALSE, fig.width=6, fig.height=3, out.width= "65%", eval=BIO}
+```{r, echo=FALSE, message=FALSE, fig.width=6, fig.height=3, out.width= "50%", eval=ifelse(regcatch == FALSE, regcatch,BIO)}
 #Fishing depth
 ggplot(stdat, aes((fishingdepthmin+fishingdepthmax)/2, fill = gear.text))+
   geom_histogram(color="black")+
   labs(x= "Mean fishing depth during haul (m)", y = "Number")+
   scale_fill_viridis_d(name = "Gear")+theme_bw()
 ```
+\pagebreak
 
-```{r, eval = BIO, echo = FALSE, message = FALSE, results = 'asis'}
+```{r, eval = ifelse(regcatch == FALSE, regcatch,BIO), echo = FALSE, message = FALSE, results = 'asis'}
 cat("# Catch composition\n")
+
 cat("## Species diversity\n")
 ```
 
-```{r,echo=FALSE, message=FALSE, eval=BIO}
+```{r,echo=FALSE, message=FALSE, eval=ifelse(regcatch == FALSE, regcatch,BIO)}
 #Sjekk hvilke arter som er vanligst
 options(dplyr.summarise.inform=F)
 tst<-stasamp %>% dplyr::group_by(scientificname) %>% 
@@ -241,12 +297,12 @@ tst<-stasamp %>% dplyr::group_by(scientificname) %>%
                    minN = min(cr.n.nm), maxN = max(cr.n.nm))
 ```
 
-```{r, eval = BIO, echo = FALSE, message = FALSE, results = 'asis'}
+```{r, eval = ifelse(regcatch == FALSE, regcatch,BIO), echo = FALSE, message = FALSE, results = 'asis'}
 cat("Number of species registered during the survey:")
 ```
-`r if(BIO==TRUE) length(unique(tst$scientificname))`
+`r if(regcatch==TRUE) length(unique(tst$scientificname))`
 
-```{r, echo = FALSE, message=FALSE, fig.width=7, fig.height=3.5, out.width= "70%", eval = BIO}
+```{r, echo = FALSE, message=FALSE, fig.width=6, fig.height=4, out.width= "50%", eval = ifelse(regcatch == FALSE, regcatch,BIO)}
 #cumulative number of species vs number of stations
 nspec <- data.frame(station=unique(stasamp$station),
            nspecies=tapply(cumsum(!duplicated(stasamp$scientificname)), stasamp$station,max))
@@ -258,97 +314,85 @@ ggplot(nspec, aes(nstation, nspecies))+geom_line(size = 1)+theme_bw()+
        title = "Number of species identified versus number of stations sampled")
 ```
 
-```{r, eval = BIO, echo = FALSE, message = FALSE, results = 'asis'}
-cat("## Max catch rate by species for the 20 species with highest catch rates\n")
+```{r, eval = ifelse(regcatch == FALSE, regcatch,BIO), echo = FALSE, message = FALSE, results = 'asis'}
+cat("## Maximum catch rates by gear and species\n")
 ```
 
-```{r,echo=FALSE, message=FALSE, fig.width=9, fig.height=3.3, out.width= "85%", fig.align="center", warning=FALSE, eval= BIO}
+```{r,echo=FALSE, message=FALSE, warning=FALSE, eval= ifelse(regcatch == FALSE, regcatch,BIO)}
 options(dplyr.summarise.inform=F)
 tst<-subset(stasamp, gearcondition==1) %>% 
   dplyr::group_by(gear.text,scientificname) %>% 
   dplyr::summarise(meanW=mean(cr.kg.nm), meanN = mean(cr.n.nm),
                    minW = min(cr.kg.nm), maxW = max(cr.kg.nm),
                    minN = min(cr.n.nm), maxN = max(cr.n.nm))
-tst2 <- tst %>% group_by(gear.text) %>% summarise(highN = max(maxN, na.rm = T),
-                                                  highW = max(maxW, na.rm = T))
-tst <- left_join(tst, tst2)
-tst$ismaxN <- FALSE
-tst$ismaxN[tst$maxN==tst$highN] <- TRUE
-tst$ismaxW <- FALSE
-tst$ismaxW[tst$maxW==tst$highW] <- TRUE
 ```
 
-```{r, eval = BIO, echo = FALSE, message = FALSE, results = 'asis'}
-cat("Species with highest catch rate by gear - biomass:")
+```{r, eval = ifelse(regcatch == FALSE, regcatch,BIO), echo = FALSE, message = FALSE, results = 'asis', fig.align="left"}
+cat("Species with highest catch rate by biomass:")
+
+kableExtra::kable(tst %>% group_by(gear.text) %>% slice_max(maxW) %>% select(gear.text, scientificname) %>% data.frame(),col.names = c("Gear", "Scientific name")) %>% column_spec(2, italic = TRUE) %>% kable_styling(font_size = 11,position = "left")
+```
+  
+  
+```{r, eval = ifelse(regcatch == FALSE, regcatch,BIO), echo = FALSE, message = FALSE, results = 'asis'}
+cat("\nSpecies with highest catch rate by number:")
+
+kableExtra::kable(tst %>% group_by(gear.text) %>% slice_max(maxN) %>% select(gear.text, scientificname) %>% data.frame(), col.names = c("Gear", "Scientific name")) %>% column_spec(2, italic = TRUE) %>% kable_styling(font_size = 11,position = "left")
+```
+\pagebreak
+
+```{r, eval = ifelse(regcatch == FALSE, regcatch,BIO), echo = FALSE, message = FALSE, results = 'asis'}
+cat("The figures below show maximum catch rates of the 20 species with the highest maximum catch rates.")
 ```
 
-`r if(BIO==TRUE) table(tst$scientificname[tst$ismaxW==TRUE], by = tst$gear.text[tst$ismaxW==TRUE])`
-
-```{r, eval = BIO, echo = FALSE, message = FALSE, results = 'asis'}
-cat("Species with highest catch rate by gear - numbers:")
-```
-
-`r if(BIO==TRUE) table(tst$scientificname[tst$ismaxN==TRUE], by = tst$gear.text[tst$ismaxN==TRUE])`
-
-```{r, echo=FALSE, message=FALSE, fig.width=9, fig.height=3, out.width= "85%", fig.align="center", warning=FALSE, eval=BIO}
-
-gear <- "Bottom trawl"
-
+```{r, echo=FALSE, message=FALSE, fig.width=9, fig.height=3.5, out.width= "85%", fig.align="center", warning=FALSE, eval=ifelse(regcatch == FALSE, regcatch,BIO)}
 #Weight
-ggplot(tst %>% dplyr::filter(gear.text == gear & !is.na(scientificname)),
-       aes(reorder(scientificname, -maxW), maxW))+geom_col()+
-  coord_cartesian(xlim =c(1,20))+ #show the 20 species with highest catches
-  scale_y_continuous(expand=c(0,0), limits = c(0,max(tst$maxW[tst$gear.text==gear], na.rm=T)+2))+theme_bw()+
-  theme(axis.text.x = element_text(angle = 35, colour = "red", size = 11),
+for(i in unique(tst$gear.text)){
+ g <- ggplot(tst %>% dplyr::filter(gear.text == i & !is.na(scientificname)),
+       aes(reorder(scientificname, -maxW), maxW))+
+    geom_col()+
+    coord_cartesian(xlim =c(1,20))+ #show the 20 species with highest catches
+    theme_bw()+
+    theme(axis.text.x = element_text(angle = 35, colour = "red", size = 11),
         axis.title.x = element_blank())+
-  labs(x = "Taxon", y = "Max catch rate (kg/nmi)", title = "Biomass")
+    labs(x = "Taxon", y = "Max catch rate (kg/nmi)", title = paste0("Biomass - ", i))
+ print(g)
+}
 
 #Number
-ggplot(tst %>% dplyr::filter(gear.text == gear & !is.na(scientificname)),
-       aes(reorder(scientificname, -maxN), maxN))+geom_col()+
-  coord_cartesian(xlim =c(1,20))+ #show the 20 species with highest catches
-  scale_y_continuous(expand=c(0,0), limits = c(0,max(tst$maxN[tst$gear.text==gear], na.rm=T)+15))+#, limits = c(0,700))+
-  theme_bw()+theme(axis.text.x = element_text(angle = 35, colour = "red", size = 11), axis.title.x = element_blank())+
-  labs(x = "Taxon", y = "Max catch rate (N/nmi)", title = "Number of individuals")
-```
-```{r, eval = BIO, echo = FALSE, message = FALSE, results = 'asis'}
-cat("### Pelagic trawl\n")
-```
-
-### Pelagic trawl
-
-The species with highest catch rates in pelagic trawls were `r g<-tst %>% filter(gear.text == "Pelagic trawl") %>% arrange(-maxW);g[1,2]` (`r unique(stasamp$commonname[stasamp$scientificname %in% toString(g[1,2])])`) by biomass, and `r g<-tst %>% filter(gear.text == "Pelagic trawl") %>% arrange(-maxN);g[1,2]` (`r unique(stasamp$commonname[stasamp$scientificname %in% toString(g[1,2])])`) by number.
-
-```{r, echo=FALSE, message=FALSE, fig.width=9, fig.height=3.3, out.width= "85%", fig.align="center", warning=FALSE}
-gear <- "Pelagic trawl"
-#Weight
-ggplot(tst %>% dplyr::filter(gear.text == gear & !is.na(scientificname)),
-       aes(reorder(scientificname, -maxW), maxW))+geom_col()+
-  coord_cartesian(xlim =c(1,20))+ #show the 20 species with highest catches
-  scale_y_continuous(expand=c(0,0), limits = c(0,max(tst$maxW[tst$gear.text==gear], na.rm=T)+2))+theme_bw()+
-  theme(axis.text.x = element_text(angle = 35, colour = "red", size = 11),
-        axis.title.x = element_blank())+
-  labs(x = "Taxon", y = "Max catch rate (kg/nmi)", title = "Biomass")
-#Number
-ggplot(tst %>% dplyr::filter(gear.text == gear & !is.na(scientificname)),
-       aes(reorder(scientificname, -maxN), maxN))+geom_col()+
-  coord_cartesian(xlim =c(1,20))+ #show the 20 species with highest catches
-  scale_y_continuous(expand=c(0,0), limits = c(0,max(tst$maxN[tst$gear.text==gear], na.rm=T)+15))+#, limits = c(0,700))+
-  theme_bw()+theme(axis.text.x = element_text(angle = 35, colour = "red", size = 11), axis.title.x = element_blank())+
-  labs(x = "Taxon", y = "Max catch rate (N/nmi)", title = "Number of individuals")
+for(i in unique(tst$gear.text)){
+  g <- ggplot(tst %>% dplyr::filter(gear.text == i & !is.na(scientificname)),
+       aes(reorder(scientificname, -maxN), maxN))+
+    geom_col()+
+    coord_cartesian(xlim =c(1,20))+ #show the 20 species with highest catches
+    theme_bw()+
+    theme(axis.text.x = element_text(angle = 35, colour = "red", size = 11),
+          axis.title.x = element_blank())+
+    labs(x = "Taxon", y = "Max catch rate (N/nmi)", title = paste0("Number of individuals - ", i))
+  print(g)
+}
 ```
 
-## Spatial variation in catches of common species
-
-```{r create space between plots, echo=FALSE, message=FALSE}
-my_plot_hook <- function(x, options)
-  paste("\n", knitr::hook_plot_tex(x, options), "\n")
-knitr::knit_hooks$set(plot = my_plot_hook)
+```{r, eval = ifelse(regcatch == FALSE, regcatch,BIO), echo = FALSE, message = FALSE, results = 'asis'}
+cat("## Spatial variation in catches of common species\n")
 ```
 
-```{r spatial distribution of catches, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 9, fig.height = 3, out.width="90%", fig.align="left"}
+```{r, eval = ifelse(regcatch == FALSE, regcatch,BIO), echo = FALSE, message = FALSE, results = 'asis'}
+cat("Catches are split by gear. Bubble size is comparable between gears within the same species, but not between species.")
+```
+
+```{r spatial distribution of catches, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 11, fig.height = 5, out.width="100%", fig.align="left", eval = ifelse(regcatch == FALSE, regcatch,BIO)}
+
 #Get coordinates for ship track
 coord.track <- dataset %>% dplyr::select(Date,Log, Lon.dd, Lat.dd) %>% data.frame()
+
+#Font size for gear type
+tz <- 12
+
+#Species check - remove selected species if not in data
+spec.check <- stasamp %>% dplyr::select(scientificname) %>% unique() 
+species <- species[species %in% spec.check$scientificname]
+
 for(i in 1:length(species)) {
   if (numplot == 1) {
     Title = paste("Catch rate (number of individuals)", "|", toString(format(Sys.Date(), "%Y")),
@@ -358,17 +402,22 @@ for(i in 1:length(species)) {
         aes(z = z),
         breaks = d.contours,
         colour = "lightblue",
-        size = 0.5,
+        size = 0.25,
         show.legend = TRUE
       ) +
-      geom_map(data=europe, map=europe,  aes(x=long, y=lat, map_id=region),
-           color="gray50", fill="gray60")+
+      geom_map(
+        data = europe,
+        map = europe,
+        aes(x = long, y = lat, map_id = region),
+        color = "gray60",
+        fill = "lightyellow2",size = 0.15, inherit.aes = F
+      ) +
       geom_point(
         data = coord.track,
         aes(Lon.dd, Lat.dd, group = Date),
         alpha = 0.1,
         colour = "grey65",
-        size = 0.1,
+        size = 0.005,
         inherit.aes = F
       ) +
       geom_point(
@@ -382,7 +431,7 @@ for(i in 1:length(species)) {
       ) +
       facet_grid( ~ gear.text) +
       scale_size_area(max_size = Bubble.size) +
-      theme_bw() +
+      theme_bw() + theme(strip.text = element_text(size = tz))+
       coord_map(xlim = Xlim, ylim = Ylim) +
       labs(
         x = NULL,
@@ -402,17 +451,22 @@ for(i in 1:length(species)) {
         aes(z = z),
         breaks = d.contours,
         colour = "lightblue",
-        size = 0.5,
+        size = 0.25,
         show.legend = TRUE
       ) +
-      geom_map(data=europe, map=europe,  aes(x=long, y=lat, map_id=region),
-           color="gray50", fill="gray60")+
+      geom_map(
+        data = europe,
+        map = europe,
+        aes(x = long, y = lat, map_id = region),
+        color = "gray60",
+        fill = "lightyellow2", size = 0.15, inherit.aes = F
+      ) +
       geom_point(
         data = coord.track,
         aes(Lon.dd, Lat.dd, group = Date),
         alpha = 0.1,
         colour = "grey65",
-        size = 0.1,
+        size = 0.005,
         inherit.aes = F
       ) +
       geom_point(
@@ -426,7 +480,7 @@ for(i in 1:length(species)) {
       ) +
       facet_grid( ~ gear.text) +
       scale_size_area(max_size = Bubble.size) +
-      theme_bw() +
+      theme_bw() + theme(strip.text = element_text(size = tz))+
       coord_map(xlim = Xlim, ylim = Ylim) +
       labs(
         x = NULL,
@@ -438,58 +492,70 @@ for(i in 1:length(species)) {
   }
 }
 ```
-\pagebreak
 
-## Length-weight relationships - all species
+```{r, eval = ifelse(regcatch == FALSE, regcatch,BIO), echo = FALSE, message = FALSE, results = 'asis'}
+cat("## Length-weight relationships\n")
+```
 
-```{r, echo=FALSE, message=FALSE, fig.width=9, fig.height=6, out.width= "90%", warning=FALSE}
+```{r, echo=FALSE, message=FALSE, fig.width=11, fig.height=8, out.width= "100%", warning=FALSE, eval = ifelse(regcatch == FALSE, regcatch,BIO)}
 stasampindi <- right_join(stasamp,dd[[1]]$individual)
 stasampindiage <- left_join(stasampindi, dd[[1]]$agedetermination)
+
 #m -> cm
 stasampindiage$length.cm <- (stasampindiage$length * 100 )
+
 #create list of unique species
-species <- stasampindiage %>% dplyr::filter(individualweight > 0 & !is.na(scientificname)) %>% dplyr::select(scientificname) %>% unique() %>% 
+species2 <- stasampindiage %>% dplyr::filter(individualweight > 0 & !is.na(scientificname)) %>% dplyr::select(scientificname) %>% unique() %>% 
   arrange(scientificname) %>% data.frame()
+
 # split the species into 2 or 3 plots depending on the number of unique species
 # that has individual weights
-if(nrow(species) <= 50){
+
+if(nrow(species2) <= 50){
   
-  ggplot(stasampindiage %>% filter(individualweight>0 & scientificname %in% species$scientificname[1:floor((nrow(species)/2))] & !is.na(scientificname)),
+  g <- ggplot(stasampindiage %>% filter(individualweight>0 & scientificname %in% species2$scientificname[1:floor((nrow(species2)/2))] & !is.na(scientificname)),
          aes(x=length.cm, y=individualweight, group=scientificname)) +
-    geom_point(size=3, shape="+", aes(colour=scientificname)) +guides(colour=FALSE)+
+    geom_point(size=3, shape="+") +
     facet_wrap(~scientificname, scales="free") + 
     labs(x="Length (cm)", y="Weight (kg)")+ theme_bw()
+  print(g)
   
-  ggplot(stasampindiage %>% filter(individualweight>0 & scientificname %in% species$scientificname[(floor((nrow(species)/2))+1):nrow(species)] & !is.na(scientificname)), 
+  g <- ggplot(stasampindiage %>% filter(individualweight>0 & scientificname %in% species2$scientificname[(floor((nrow(species2)/2))+1):nrow(species2)] & !is.na(scientificname)), 
          aes(x=length.cm, y=individualweight, group=scientificname)) +
-    geom_point(size=3, shape="+", aes(colour=scientificname)) +guides(colour=FALSE)+
+    geom_point(size=3, shape="+") +
     facet_wrap(~scientificname, scales="free") + 
     labs(x="Length (cm)", y="Weight (kg)")+ theme_bw()
+  print(g)
+  
 } else{
-  ggplot(stasampindiage %>% filter(individualweight>0 & scientificname %in% species$scientificname[1:floor((nrow(species)/3))] & !is.na(scientificname)),
+  g <- ggplot(stasampindiage %>% filter(individualweight>0 & scientificname %in% species2$scientificname[1:floor((nrow(species2)/3))] & !is.na(scientificname)),
          aes(x=length.cm, y=individualweight, group=scientificname))+
-    geom_point(size=3, shape="+", aes(colour=scientificname)) +guides(colour=FALSE)+
+    geom_point(size=3, shape="+") +
     facet_wrap(~scientificname, scales="free") + 
     labs(x="Length (cm)", y="Weight (kg)")+ theme_bw()
+  print(g)
   
-    ggplot(stasampindiage %>% filter(individualweight>0 & scientificname %in% species$scientificname[(floor((nrow(species)/3))+1):(floor((nrow(species)/3)*2))] & !is.na(scientificname)),
+  g <-ggplot(stasampindiage %>% filter(individualweight>0 & scientificname %in% species2$scientificname[(floor((nrow(species2)/3))+1):(floor((nrow(species2)/3)*2))] & !is.na(scientificname)),
          aes(x=length.cm, y=individualweight, group=scientificname))+
-    geom_point(size=3, shape="+", aes(colour=scientificname)) +guides(colour=FALSE)+
+    geom_point(size=3, shape="+") +
     facet_wrap(~scientificname, scales="free") + 
     labs(x="Length (cm)", y="Weight (kg)")+ theme_bw()
-ggplot(stasampindiage %>% filter(individualweight>0 & scientificname %in% species$scientificname[(floor((nrow(species)/3)*2)+1):nrow(species)] & !is.na(scientificname)), 
+  print(g)
+  
+  g <-ggplot(stasampindiage %>% filter(individualweight>0 & scientificname %in% species2$scientificname[(floor((nrow(species2)/3)*2)+1):nrow(species2)] & !is.na(scientificname)), 
        aes(x=length.cm, y=individualweight, group=scientificname)) +
-  geom_point(size=3, shape="+", aes(colour=scientificname))+ guides(colour=FALSE) +
+  geom_point(size=3, shape="+")+
   facet_wrap(~scientificname, scales="free") + 
-  labs(x="Length (cm)", y="Weight (kg)")+ theme_bw() 
+  labs(x="Length (cm)", y="Weight (kg)")+ theme_bw()
+  print(g)
 }
 ```
 
-\pagebreak
+```{r, eval = ifelse(regcatch == FALSE, regcatch,BIO), echo = FALSE, message = FALSE, results = 'asis'}
+cat("## Length-age relationships\n")
+```
 
-## Length-age relationships
-
-```{r, echo=FALSE, message=FALSE, fig.width=8, fig.height=5, out.width= "80%", warning=FALSE}
+```{r, echo=FALSE, message=FALSE, fig.width=9, fig.height=6, out.width= "80%", warning=FALSE, eval=ifelse(regcatch == FALSE, regcatch,BIO)}
 ggplot(stasampindiage %>% filter(age>0 & !is.na(scientificname)), aes(length.cm, age))+geom_point(size = 0.5)+facet_wrap(~scientificname, scales = "free")+
   theme_bw()+labs(x = "Length (cm)", y = "Age (years)")
 ```
