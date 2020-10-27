@@ -21,7 +21,7 @@ knitr::opts_chunk$set(echo = TRUE, dpi = 300, dev = "CairoPNG")
 
 ```{r customise report to cruise, echo=FALSE, message=FALSE}
 # Define cruise directory. If using R studio project directory, set mydir <- NULL
-mydir <- "//ces.imr.no/cruise_data/2018/S2018106_PGOSARS_4174"
+mydir <- "//ces.imr.no/cruise_data/2018/S2018623_PKRISTINEBONNEVIE_1172"
 
 # Define depth contours
 d.contours<-c(-50,-200,-400,-500) #Depth contours for plots with bathymetry
@@ -211,27 +211,41 @@ for (i in 1:length(file_list)){
     DT <- str_extract(DT, "(?<== ).+(?=\\:)")
   }
   #read in files using the fread function from the data.table package
+  #NB!only variables present in the first data file will be kept
   temp_data <- fread(file_list[i], stringsAsFactors = F,header = F, skip = "*END*") 
-  if(ncol(temp_data) == length(DT)){
-    names(temp_data) <- DT
+  if(ncol(temp_data) == length(DT)){names(temp_data) <- DT} else{
+    # Read the file by lines
+    DTi <- readLines(file_list[i]) 
+    # Detect lines containing variable names
+    name_lines <- str_detect(DTi, "# name")
+    # Keep those lines 
+    DTi <- DTi[name_lines]
+    # Grep the variable names
+    DTi <- str_extract(DTi, "(?<== ).+(?=\\:)")
+    names(temp_data) <- DTi
+    temp_data <- temp_data[,..DT]
+  }
     #select the measurements from when the CTD was descending
     temp_data <- temp_data[1:ceiling(nrow(temp_data)/2),]
     #Create a station variable from the file name
-    temp_data$station <- strsplit(gsub(".cnv", "", file_list[i]), "sort")[[1]][2] 
+    station <- strsplit(gsub(".cnv", "", file_list[i]), "sort")[[1]][1] 
+    temp_data$station <- strsplit(gsub("[^[:digit:]]", "", station), "sort")[[1]][1] 
     #for each iteration, bind the new data to the building dataset
     ctd <- rbindlist(list(ctd, temp_data), use.names = T) 
     #remove the temp file
     rm(temp_data)
-  } else print(paste0("CTD ", strsplit(gsub(".cnv", "", file_list[i]), "sort")[[1]][1], " contains additional variables and will be removed"))
 }
 
 ##position of stations is in data.frame called dataset from the cruise log
 #Combine with CTD data
 ctdpos <- dataset %>% 
   dplyr::select(4,Time,Date, Lon.dd, Lat.dd, gear.text) %>% 
-  dplyr::rename(station = 1) %>% dplyr::filter(!is.na(station) & gear.text == "CTD") %>% 
+  dplyr::rename(station = 1) %>% dplyr::filter(!is.na(station) & gear.text %in% dataset$gear.text[grepl("^CTD",dataset$gear.text)]) %>% 
   dplyr::arrange(station) %>% data.frame()
-ctdpos$station <- as.character(ctdpos$station) 
+
+if(nrow(ctdpos)>0){
+  ctdpos$station <- as.character(ctdpos$station) 
+
 ctdpos <- ctdpos %>% dplyr::group_by(station) %>% 
   dplyr::summarise(Lon = mean(Lon.dd),Lat = mean(Lat.dd), Time = unique(Time)[1], 
                    Date = unique(Date)[1])
@@ -239,14 +253,14 @@ ctdpos$station <- paste0("0",ctdpos$station)
 ctd <- left_join(ctd, ctdpos)
 
 maxdepth <- ctd %>% dplyr::group_by(station, Lon, Lat) %>% 
-  dplyr::summarise(max_depth = max(pressure_db))
+  dplyr::summarise(max_depth = max(prDM))
 ctd <- left_join(ctd, maxdepth)
 ctd$plotdepth <- NA
-ctd$plotdepth[ctd$pressure_db<=50] <- "Surface"
-ctd$plotdepth[ctd$max_depth-ctd$pressure_db<=50] <- "Bottom"
+ctd$plotdepth[ctd$prDM<=50] <- "Surface"
+ctd$plotdepth[ctd$max_depth-ctd$prDM<=50] <- "Bottom"
 
 #If the depth is <= 50 m, the surface layer will be overwritten by the bottom layer in the command above. Therefore add an extra line with the same temperature for surface.
-for(i in 1:nrow(ctd)){
+for(i in 1:nrow(ctdpos)){
   if(ctd$max_depth[i]<=51){
     extra <- ctd[i,]
     extra$plotdepth <- "Surface"
@@ -254,28 +268,48 @@ for(i in 1:nrow(ctd)){
   }}
 
 ctd.plot <- ctd %>% dplyr::group_by(station, Lon, Lat, Date, Time, plotdepth, max_depth) %>% 
-  dplyr::summarise(mean_temp = mean(temperature), mean_salinity = mean(salinity_PSU)) %>% dplyr::filter(!is.na(plotdepth)) %>% 
+  dplyr::summarise(mean_temp = mean(t068C), mean_salinity = mean(sal00)) %>% dplyr::filter(!is.na(plotdepth)) %>% 
   data.frame()
+}
 
+ctdpos <- nrow(ctdpos)>0
 ```
-## Summary of measurements
 
-`r length(unique(ctd$station))` CTD casts were done during the survey, covering a total depth of `r round(sum(maxdepth$max_depth)/1000, digits = 1)` km.
+```{r, echo = FALSE, eval = CTD}
+cat("## Summary of measurements\n")
+```
 
-```{r, echo=FALSE, fig.height=3, fig.width=4.5, out.width= "40%",fig.show="hold", message=FALSE, warning=FALSE}
+```{r, eval = CTD, echo = FALSE, message = FALSE}
+cat("\nNumber of CTD casts done during the cruise:")
+```
 
-ggplot(ctd, aes(temperature))+geom_histogram(color="black")+theme_bw()+
+`r if(CTD==TRUE) length(unique(ctd$station))`
+
+```{r, eval = CTD, echo = FALSE, message = FALSE}
+cat("\nTotal depth covered by CTDs (km):")
+```
+
+`r if(CTD==TRUE) round(sum(maxdepth$max_depth)/1000, digits = 1)`
+
+```{r, echo=FALSE, fig.height=3, fig.width=4.5, out.width= "40%",fig.show="hold", message=FALSE, warning=FALSE, eval = CTD}
+
+ggplot(ctd, aes(t068C))+geom_histogram(color="black")+theme_bw()+
   labs(x = "Temperature (deg C)", y = "Count")
 
-ggplot(ctd, aes(salinity_PSU))+geom_histogram(color="black")+theme_bw()+
+ggplot(ctd, aes(sal00))+geom_histogram(color="black")+theme_bw()+
   labs(x = "Salinity (PSU)", y = "Count")
 ```
 
 \pagebreak
 
-## Variation in temperature and salinity with bathymetry and geographical location
+```{r, echo = FALSE, eval = ifelse(ctdpos == FALSE, ctdpos, CTD)}
+cat("## Variation in temperature and salinity with bathymetry and geographical location\n")
+```
 
-```{r, echo=FALSE, message=FALSE, fig.width=9, fig.height=4, out.width= "100%", warning=FALSE, fig.align="center"}
+```{r, echo=FALSE, message=FALSE, fig.width=9, fig.height=4, out.width= "100%", warning=FALSE, fig.align="center", eval = ifelse(ctdpos == FALSE, ctdpos, CTD)}
+
+#Get coordinates for ship track
+coord.track <- dataset %>% dplyr::select(Date,Log, Lon.dd, Lat.dd) %>% data.frame()
 
 ggplot(bath, aes(x=x, y=y))+
   geom_contour(aes(z=z), breaks=d.contours,colour="lightblue", size=0.5,show.legend = TRUE)+ 
@@ -291,7 +325,7 @@ ggplot(bath, aes(x=x, y=y))+
 (deg C)")
 ```
 
-```{r, echo=FALSE, message=FALSE, fig.width=9, fig.height=4, out.width= "100%", warning=FALSE, fig.align="center"}
+```{r, echo=FALSE, message=FALSE, fig.width=9, fig.height=4, out.width= "100%", warning=FALSE, fig.align="center", eval = ifelse(ctdpos == FALSE, ctdpos, CTD)}
 
 ggplot(bath, aes(x=x, y=y))+
   geom_contour(aes(z=z), breaks=d.contours,colour="lightblue", size=0.5,show.legend = TRUE)+ 
@@ -307,24 +341,26 @@ ggplot(bath, aes(x=x, y=y))+
 ```
 
 \pagebreak
-## Density in the water column
 
-```{r, echo=FALSE, message=FALSE, fig.width=9, fig.height=2.8, warning=FALSE, fig.align="center"}
+```{r, echo = FALSE, eval = CTD}
+cat("## Density in the water column\n")
+```
+
+```{r, echo=FALSE, message=FALSE, fig.width=9, fig.height=2.8, warning=FALSE, fig.align="center", eval = CTD}
 
 depthlim <- 100 #choose the maximum depth you want to plot
 
-ggplot(ctd, aes(density, pressure_db, group=station, color=Lat))+
-  geom_line(size = 0.55)+
+ggplot(ctd, aes(`sigma-t00`, prDM, group=station, color=ifelse(is.null(ctd$Lat),as.numeric(station),Lat)))+
+  geom_line(size = 0.55, show.legend = ifelse(is.null(ctd$Lat), FALSE, TRUE))+
   scale_y_reverse(limits=c(depthlim,0))+
   scale_color_distiller(palette="Spectral")+
-  # scale_color_viridis_c(option = "A")+
   labs(x = expression("Density (sigma-t, kg/"*m^3*")"), 
-       y = "Depth (m)", color="Latitude (N)")+
-  theme_bw()+theme(panel.background = element_rect(fill="black"),
-                   panel.grid.major = element_line(color = "grey45", size = 0.1, linetype=1),
+       y = "Depth (m)", color=ifelse(is.null(ctd$Lat),"Station", "Latitude (N)"))+
+  theme_bw()+
+  theme(panel.background = element_rect(fill="black"),panel.grid.major = element_line(color = "grey45", size = 0.1, linetype=1),
                    panel.grid.minor = element_blank())
 
-ggplot(ctd, aes(density, pressure_db, group=station, color=Lon))+
+ggplot(ctd, aes(`sigma-t00`, prDM, group=station, color=Lon))+
   geom_line(size = 0.55)+
   scale_y_reverse(limits=c(depthlim,0))+
   scale_color_distiller(palette="Spectral")+
@@ -337,9 +373,12 @@ ggplot(ctd, aes(density, pressure_db, group=station, color=Lon))+
 ```
 
 \pagebreak
-## Light in the water column
 
-```{r, echo=FALSE, message=FALSE, fig.width=9, fig.height=4, warning=FALSE, fig.align="center"}
+```{r, echo = FALSE, eval = CTD}
+cat("## Light in the water column\n")
+```
+
+```{r, echo=FALSE, message=FALSE, fig.width=9, fig.height=4, warning=FALSE, fig.align="center", eval = CTD}
 
 tst <- strptime(ctd$Time, format = "%H:%M:%S")
 tt1 <- chron::times(format(tst, "%H:%M:%S"))
@@ -347,7 +386,7 @@ ctd$timetest <- tt1
 
 ctd$newtime <- hours(ctd$timetest)
 
-ggplot(ctd, aes(par_irradiance, pressure_db, group=station, color=newtime))+
+ggplot(ctd, aes(par, prDM, group=station, color=newtime))+
   geom_line(size = 0.55)+
   scale_y_reverse(limits=c(depthlim,0))+
   scale_color_distiller(palette="Spectral")+
@@ -416,9 +455,11 @@ stasamp$gear.text[grepl("^41",stasamp$gear)] <- "Gill net"
 stdat <- stasamp %>% select(starts_with("serial"), station, ends_with("time"),
                             longitudestart,latitudestart, bottomdepthstart,
                             bottomdepthstop,fishingdepthmin, fishingdepthmax,
-                            gear.text, contains("samplequality")) %>% unique()
+                            gear.text, contains("quality")) %>% unique()
+stdat <- stdat[,-"dataquality"]
 
-# Plotting criteria
+# Additional plotting criteria in case no gear has been registrered - then cannot
+#plot gear-based figures
 regcatch <- ifelse(length(stasamp$gear.text[!is.na(stasamp$gear.text)])>0, TRUE, FALSE)
 ```
 
@@ -437,12 +478,12 @@ knitr::kable(table(stdat$gear.text),col.names = c("Gear", "N")) %>% kable_stylin
 ```
   
 ```{r sample statistics3, eval = ifelse(regcatch == FALSE, regcatch,BIO), echo = FALSE, message = FALSE, results = 'asis'}
-cat("\nRange of bottom depths at sampling stations (m):")
+cat("\nRange of bottom depths at sampling stations (m, will be NA if any station is missing bottom depth):")
 ```
 `r if(BIO==TRUE) round(range((stasamp$bottomdepthstart+stasamp$bottomdepthstop)/2), digits =1)`
 
 ```{r trawl statistics4, eval = ifelse(regcatch == FALSE, regcatch,BIO), echo = FALSE, message = FALSE, results = 'asis'}
-cat("\nFishing depth range (m):")
+cat("\nFishing depth range (m, will be NA if any station is missing fishing depth)):")
 ```
 `r if(BIO==TRUE) round(range((stasamp$fishingdepthmin+stasamp$fishingdepthmax)/2), digits=1)`
 
@@ -494,14 +535,15 @@ cat("Number of species registered during the survey:")
 
 ```{r, echo = FALSE, message=FALSE, fig.width=6, fig.height=4, out.width= "50%", eval = ifelse(regcatch == FALSE, regcatch,BIO)}
 #cumulative number of species vs number of stations
-nspec <- data.frame(station=unique(stasamp$station),
-           nspecies=tapply(cumsum(!duplicated(stasamp$scientificname)), stasamp$station,max))
+nspec <- data.frame(station=unique(stasamp$station[!is.na(stasamp$station)]),
+           nspecies=tapply(cumsum(!duplicated(stasamp$scientificname[!is.na(stasamp$station)])), stasamp$station[!is.na(stasamp$station)],max))
 
 nspec$nstation <- seq(1:nrow(nspec))
 
 ggplot(nspec, aes(nstation, nspecies))+geom_line(size = 1)+theme_bw()+
   labs(x = "Number of stations sampled", y = "Number of unique species identified",
-       title = "Number of species identified versus number of stations sampled")
+       title = "Number of species identified versus number of stations sampled
+(excluding samples without station number)")
 ```
 
 ```{r, eval = ifelse(regcatch == FALSE, regcatch,BIO), echo = FALSE, message = FALSE, results = 'asis'}
@@ -568,19 +610,18 @@ cat("## Spatial variation in catches of common species\n")
 ```
 
 ```{r, eval = ifelse(regcatch == FALSE, regcatch,BIO), echo = FALSE, message = FALSE, results = 'asis'}
-cat("Catches are split by gear. Bubble size is comparable between gears within the same species, but not between species.")
+cat("Catches are split by gear. Bubble size is comparable between gears within the same species, but not between species. Samples taken with unspecified gear are removed.")
 ```
 
 ```{r spatial distribution of catches, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 11, fig.height = 5, out.width="100%", fig.align="left", eval = ifelse(regcatch == FALSE, regcatch,BIO)}
 
-#Get coordinates for ship track
-coord.track <- dataset %>% dplyr::select(Date,Log, Lon.dd, Lat.dd) %>% data.frame()
+dat <- stasamp[!is.na(stasamp$gear.text),]
 
 #Font size for gear type
 tz <- 12
 
 #Species check - remove selected species if not in data
-spec.check <- stasamp %>% dplyr::select(scientificname) %>% unique() 
+spec.check <- dat %>% dplyr::select(scientificname) %>% unique() 
 species <- species[species %in% spec.check$scientificname]
 
 for(i in 1:length(species)) {
@@ -611,7 +652,7 @@ for(i in 1:length(species)) {
         inherit.aes = F
       ) +
       geom_point(
-        data = stasamp %>% dplyr::filter(scientificname == species[i]),
+        data = dat %>% dplyr::filter(scientificname==species[i]),
         aes(longitudestart, latitudestart, size = cr.n.nm),
         shape = 21,
         alpha = 0.7,
@@ -660,7 +701,7 @@ for(i in 1:length(species)) {
         inherit.aes = F
       ) +
       geom_point(
-        data = stasamp %>% dplyr::filter(scientificname == species[i]),
+        data = dat %>% dplyr::filter(scientificname == species[i]),
         aes(longitudestart, latitudestart, size = cr.kg.nm),
         shape = 21,
         alpha = 0.7,
@@ -695,13 +736,20 @@ stasampindiage <- left_join(stasampindi, dd[[1]]$agedetermination)
 stasampindiage$length.cm <- (stasampindiage$length * 100 )
 
 #create list of unique species
-species2 <- stasampindiage %>% dplyr::filter(individualweight > 0 & !is.na(scientificname)) %>% dplyr::select(scientificname) %>% unique() %>% 
+if("individualweight" %in% names(stasampindiage)){
+  species2 <- stasampindiage %>% dplyr::filter(individualweight > 0 & !is.na(scientificname)) %>% dplyr::select(scientificname) %>% unique() %>% 
   arrange(scientificname) %>% data.frame()
+} else{
+    species2 <- stasampindiage %>% 
+      dplyr::filter(weight > 0 & !is.na(scientificname)) %>%
+      dplyr::select(scientificname) %>% unique() %>% 
+      arrange(scientificname) %>% data.frame()
+}
 
 # split the species into 2 or 3 plots depending on the number of unique species
 # that has individual weights
 
-if(nrow(species2) <= 50){
+if(nrow(species2) > 0 & nrow(species2) <= 50){
   
   g <- ggplot(stasampindiage %>% filter(individualweight>0 & scientificname %in% species2$scientificname[1:floor((nrow(species2)/2))] & !is.na(scientificname)),
          aes(x=length.cm, y=individualweight, group=scientificname)) +
@@ -717,7 +765,7 @@ if(nrow(species2) <= 50){
     labs(x="Length (cm)", y="Weight (kg)")+ theme_bw()
   print(g)
   
-} else{
+} else if(nrow(species2) > 0 & nrow(species2) > 50){
   g <- ggplot(stasampindiage %>% filter(individualweight>0 & scientificname %in% species2$scientificname[1:floor((nrow(species2)/3))] & !is.na(scientificname)),
          aes(x=length.cm, y=individualweight, group=scientificname))+
     geom_point(size=3, shape="+") +
@@ -746,8 +794,12 @@ cat("## Length-age relationships\n")
 ```
 
 ```{r, echo=FALSE, message=FALSE, fig.width=9, fig.height=6, out.width= "80%", warning=FALSE, eval=ifelse(regcatch == FALSE, regcatch,BIO)}
-ggplot(stasampindiage %>% filter(age>0 & !is.na(scientificname)), aes(length.cm, age))+geom_point(size = 0.5)+facet_wrap(~scientificname, scales = "free")+
-  theme_bw()+labs(x = "Length (cm)", y = "Age (years)")
+if(nrow(species2) > 0){
+  ggplot(stasampindiage %>% filter(age>0 & !is.na(scientificname)), 
+         aes(length.cm,age))+geom_point(size = 0.5)+
+    facet_wrap(~scientificname, scales = "free")+
+    theme_bw()+labs(x = "Length (cm)", y = "Age (years)")
+}
 ```
 
 
