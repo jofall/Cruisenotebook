@@ -10,7 +10,6 @@ output:
     toc: yes
     toc_depth: 3
     number_sections: true
-classoption: landscape
 ---
 \fontsize{12}{18}
 \selectfont
@@ -40,7 +39,7 @@ species <- c("Mallotus villosus", "Boreogadus saida","Micromesistius poutassou",
 # Set max size of bubbles in species distribution plots
 Bubble.size<-8      
 
-# Select metric for catches in species distribution plots (none, one or both)
+# Select metric for catches in species distribution plots (one or both)
 numplot <- 0 #catches in numbers/nmi
 bioplot <- 1 #catches in kg/nmi
 ```
@@ -84,8 +83,6 @@ TRA <- ifelse(is.null(mydir), dir.exists("CRUISE_LOG/TRACK"), dir.exists(paste0(
 Cruise tracks from the position log with points indicating start positions for different sampling gear. Points are jittered.
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.width=8, fig.height=6, out.width= "80%", fig.align="center", eval = TRA}
-# Get bathymetry data from file
-bath1<-read_csv(file = "Data/GeoData/ETOPO1_nm4.csv")
 
 #create a list of the position files from the target directory
 file_list <- if(is.null(mydir)){
@@ -158,14 +155,9 @@ europe <- map_data("worldHires", region = regions)
 Xlim <- c(min(dataset$Lon.dd, na.rm = T)-0.5, max(dataset$Lon.dd, na.rm = T)+0.5)
 Ylim <- c(min(dataset$Lat.dd, na.rm = T)-0.5, max(dataset$Lat.dd, na.rm = T)+0.5)
 
-#reduce the resolution of depth contours (to increase speed when writing to file)
-bath<-subset(bath1, bath1$y>(Ylim[1]-2) & (bath1$y<Ylim[2]+2) & bath1$ x>(Xlim[1]-2)& bath1$x<(Xlim[2]+2) & bath1$z<=(d.contours[1]+1500) & bath1$z>=(d.contours[length(d.contours)]-1500))
-
 #Plot the cruise tracks and stations
 set.seed(1) #set seed for fixed jittering of points
-ggplot(bath, aes(x=x, y=y))+
-  geom_contour(aes(z=z), breaks=d.contours,colour="lightblue", 
-               size=0.25,show.legend = TRUE)+ 
+ggplot()+ 
   geom_map(data=europe, map=europe,  aes(x=long, y=lat, map_id=region),
            color="gray60", fill="lightyellow2", size = 0.25)+
   geom_point(data=dataset, aes(Lon.dd, Lat.dd, group = Date), alpha=0.1,
@@ -312,10 +304,9 @@ cat("## Variation in temperature and salinity with bathymetry and geographical l
 #Get coordinates for ship track
 coord.track <- dataset %>% dplyr::select(Date,Log, Lon.dd, Lat.dd) %>% data.frame()
 
-ggplot(bath, aes(x=x, y=y))+
-  geom_contour(aes(z=z), breaks=d.contours,colour="lightblue", size=0.5,show.legend = TRUE)+ 
+ggplot()+ 
   geom_map(data=europe, map=europe,  aes(x=long, y=lat, map_id=region),
-           color="gray50", fill="gray60")+
+           color="gray60", fill="lightyellow2", size = 0.25)+
   geom_point(data=coord.track, aes(Lon.dd, Lat.dd, group = Date), alpha=0.1, colour="grey45", size=0.1, inherit.aes = F)+
   geom_point(data=ctd.plot, aes(Lon, Lat, fill = mean_temp), size = 2, color="black", shape = 21)+
   facet_wrap(~plotdepth)+
@@ -328,10 +319,9 @@ ggplot(bath, aes(x=x, y=y))+
 
 ```{r, echo=FALSE, message=FALSE, fig.width=9, fig.height=4, out.width= "100%", warning=FALSE, fig.align="center", eval = ifelse(ctdpos == FALSE, ctdpos, CTD)}
 
-ggplot(bath, aes(x=x, y=y))+
-  geom_contour(aes(z=z), breaks=d.contours,colour="lightblue", size=0.5,show.legend = TRUE)+ 
+ggplot()+
   geom_map(data=europe, map=europe,  aes(x=long, y=lat, map_id=region),
-           color="gray50", fill="gray60")+
+           color="gray60", fill="lightyellow2", size = 0.25)+
   geom_point(data=coord.track, aes(Lon.dd, Lat.dd, group = Date), alpha=0.1, colour="grey45", size=0.1, inherit.aes = F)+
   geom_point(data=ctd.plot, aes(Lon, Lat, fill = mean_salinity), size = 2, color="black", shape = 21)+
   facet_wrap(~plotdepth)+
@@ -629,20 +619,14 @@ for(i in 1:length(species)) {
   if (numplot == 1) {
     Title = paste("Catch rate (number of individuals)", "|", toString(format(Sys.Date(), "%Y")),
                   "|", toString(species[i]))
-    g <- ggplot(bath, aes(x = x, y = y)) +
-      geom_contour(
-        aes(z = z),
-        breaks = d.contours,
-        colour = "lightblue",
-        size = 0.25,
-        show.legend = TRUE
-      ) +
+    g <- ggplot() +
       geom_map(
         data = europe,
         map = europe,
         aes(x = long, y = lat, map_id = region),
         color = "gray60",
-        fill = "lightyellow2",size = 0.15, inherit.aes = F
+        fill = "lightyellow2",
+        size = 0.25
       ) +
       geom_point(
         data = coord.track,
@@ -678,20 +662,14 @@ for(i in 1:length(species)) {
     Title = paste("Catch rate (biomass)", "|", toString(format(Sys.Date(), "%Y")),
                   "|", toString(species[i]))
     #Catch rate kg/nmi
-    h <- ggplot(bath, aes(x = x, y = y)) +
-      geom_contour(
-        aes(z = z),
-        breaks = d.contours,
-        colour = "lightblue",
-        size = 0.25,
-        show.legend = TRUE
-      ) +
+    h <- ggplot() +
       geom_map(
         data = europe,
         map = europe,
         aes(x = long, y = lat, map_id = region),
         color = "gray60",
-        fill = "lightyellow2", size = 0.15, inherit.aes = F
+        fill = "lightyellow2",
+        size = 0.25
       ) +
       geom_point(
         data = coord.track,
