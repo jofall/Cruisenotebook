@@ -104,9 +104,9 @@ for (i in 1:length(file_list)){
   #The latitude column is in format "DDMM.MMMM N"
   #The longitude column is in format "0DDMM.MMMM E"
   #Create new columns with lon and lat in decimal degrees
-  temp_data <- temp_data %>% tidyr::separate(Latitude, into = c("DD", "MM", "x1"), 
-                                      sep = c(2,9), remove = F) %>% 
-    tidyr::separate(Longitude, into = c("x1.lon", "DD.lon", "MM.lon", "x2.lon"), 
+  temp_data <- temp_data %>% tidyr::separate(Latitude, into = c("DD", "MM", "x1"),
+                                      sep = c(2,9), remove = F) %>%
+    tidyr::separate(Longitude, into = c("x1.lon", "DD.lon", "MM.lon", "x2.lon"),
              sep = c(1,3,10), remove = F)
   temp_data$EW <- substr(temp_data$Longitude, nchar(temp_data$Longitude) - 1 + 1,
                          nchar(temp_data$Longitude)) 
