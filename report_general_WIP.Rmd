@@ -435,7 +435,7 @@ stasamp$gear.text[grepl("^30",stasamp$gear)] <- "Bottom trawl"
 stasamp$gear.text[grepl("^31",stasamp$gear)] <- "Bottom trawl"
 stasamp$gear.text[grepl("^32",stasamp$gear)] <- "Bottom trawl"
 stasamp$gear.text[grepl("^34",stasamp$gear)] <- "Unspecified trawl"
-stasamp$gear.text[grepl("^34",stasamp$gear)] <- "Unspecified trawl"
+stasamp$gear.text[grepl("^34",stasamp$gear)] <- "Unspecified trawl" #to 33???
 stasamp$gear.text[grepl("^35",stasamp$gear)] <- "Pelagic trawl"
 stasamp$gear.text[grepl("^36",stasamp$gear)] <- "Danish seine"
 stasamp$gear.text[grepl("^37",stasamp$gear)] <- "Seine"
