@@ -20,7 +20,7 @@ knitr::opts_chunk$set(echo = TRUE, dpi = 300, dev = "CairoPNG")
 
 ```{r customise report to cruise, echo=FALSE, message=FALSE}
 # Define cruise directory. If you have copied files into your R studio project directory, set mydir <- NULL (NB! If choosing this option you need to have the same folder structure in your project directory as in cruise_data)
-mydir <- "//ces.hi.no/cruise_data/2015/S2015115_PGOSARS_4174"
+mydir <- "//ces.hi.no/cruise_data/2018/S2018203_PJOHANHJORT_1019"
 
 # Define depth contours
 d.contours<-c(-100,-200,-400,-500,-750,-1000) #Depth contours for plots with bathymetry
@@ -346,7 +346,7 @@ cat("## Density in the water column\n")
 
 depthlim <- 100 #choose the maximum depth you want to plot
 
-ggplot(ctd, aes(`sigma-t00`, prDM, group=station, color=ifelse(is.null(ctd$Lat),as.numeric(station),Lat)))+
+ggplot(ctd, aes(`sigma-t00`, prDM, group=ifelse(is.null(ctd$Lat),as.numeric(station),Lat), color=ifelse(is.null(ctd$Lat),as.numeric(station),Lat)))+
   geom_line(size = 0.55, show.legend = ifelse(is.null(ctd$Lat), FALSE, TRUE))+
   scale_y_reverse(limits=c(depthlim,0))+
   scale_color_distiller(palette="Spectral")+
@@ -527,7 +527,7 @@ tst<-stasamp %>% dplyr::group_by(scientificname) %>%
 ```{r, eval = BIO, echo = FALSE, message = FALSE, results = 'asis'}
 cat("Number of species registered during the survey:")
 ```
-`r if(regcatch==TRUE) length(unique(tst$scientificname))`
+`r if(BIO==TRUE) length(unique(tst$scientificname))`
 
 ```{r, echo = FALSE, message=FALSE, fig.width=6, fig.height=4, out.width= "50%", eval = BIO}
 #cumulative number of species vs number of stations
