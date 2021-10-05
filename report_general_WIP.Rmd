@@ -20,10 +20,10 @@ knitr::opts_chunk$set(echo = TRUE, dpi = 300, dev = "CairoPNG")
 
 ```{r customise report to cruise, echo=FALSE, message=FALSE}
 # Define cruise directory. If you have copied files into your R studio project directory, set mydir <- NULL (NB! If choosing this option you need to have the same folder structure in your project directory as in cruise_data)
-mydir <- "//ces.hi.no/cruise_data/2019/S2019860_PARNIFRIDRIKSSON_7550"
+mydir <- "//ces.hi.no/cruise_data/2015/S2015115_PGOSARS_4174"
 
 # Define depth contours
-d.contours<-c(-50,-200,-400,-500) #Depth contours for plots with bathymetry
+d.contours<-c(-100,-200,-400,-500,-750,-1000) #Depth contours for plots with bathymetry
 
 # Define the countries to show in the maps 
 # (the map package uses country names from the 1980s, use: 
@@ -32,7 +32,7 @@ d.contours<-c(-50,-200,-400,-500) #Depth contours for plots with bathymetry
 regions <- c("Norway", "Sweden", "Finland", "USSR", "UK")
 
 # Select species for distribution maps (scientific names starting with a capital letter)
-species <- c("Mallotus villosus", "Boreogadus saida","Micromesistius poutassou", "Clupea harengus", 
+species <- c("Reinhardtius hippoglossoides", "Boreogadus saida","Micromesistius poutassou", "Clupea harengus", 
              "Melanogrammus aeglefinus", "Gadus morhua", "Sebastes mentella", "Sebastes norvegicus", 
              "Sebastes viviparus", "Pandalus borealis")
 
@@ -295,13 +295,14 @@ ggplot(ctd, aes(sal00))+geom_histogram(color="black")+theme_bw()+
 
 \pagebreak
 
-```{r, echo = FALSE, eval = ifelse(ctdpos == FALSE, ctdpos, CTD)}
+```{r, echo = FALSE, eval = CTD}
 cat("## Variation in temperature and salinity with bathymetry and geographical location\n")
 ```
 
-```{r, echo=FALSE, message=FALSE, fig.width=9, fig.height=4, out.width= "100%", warning=FALSE, fig.align="center", eval = ifelse(ctdpos == FALSE, ctdpos, CTD)}
+```{r, echo=FALSE, message=FALSE, fig.width=9, fig.height=4, out.width= "100%", warning=FALSE, fig.align="center", eval = CTD}
 
-#Get coordinates for ship track
+if(ctdpos == TRUE){
+  #Get coordinates for ship track
 coord.track <- dataset %>% dplyr::select(Date,Log, Lon.dd, Lat.dd) %>% data.frame()
 
 ggplot()+ 
@@ -315,10 +316,13 @@ ggplot()+
   coord_map(xlim = Xlim,ylim = Ylim)+
   labs(x = "Longitude", y = "Latitude", fill="Mean temperature
 (deg C)")
+}
+
+
 ```
 
-```{r, echo=FALSE, message=FALSE, fig.width=9, fig.height=4, out.width= "100%", warning=FALSE, fig.align="center", eval = ifelse(ctdpos == FALSE, ctdpos, CTD)}
-
+```{r, echo=FALSE, message=FALSE, fig.width=9, fig.height=4, out.width= "100%", warning=FALSE, fig.align="center", eval = CTD}
+if(ctdpos == TRUE){
 ggplot()+
   geom_map(data=europe, map=europe,  aes(x=long, y=lat, map_id=region),
            color="gray60", fill="lightyellow2", size = 0.25)+
@@ -329,6 +333,7 @@ ggplot()+
   theme_bw()+
   coord_map(xlim = Xlim,ylim = Ylim)+
   labs(x = "Longitude", y = "Latitude", fill="Mean salinity (PSU)")
+}
 ```
 
 \pagebreak
@@ -463,26 +468,26 @@ cat("Total number of hauls taken during the survey:")
 ```
 `r if(BIO==TRUE) nrow(stdat)`
 
-```{r sample statistics2, eval = ifelse(regcatch == FALSE, regcatch,BIO), echo = FALSE, message = FALSE, results = 'asis'}
+```{r sample statistics2, eval = BIO, echo = FALSE, message = FALSE, results = 'asis'}
 cat("\nNumber of samples by gear type:")
 knitr::kable(table(stdat$gear.text),col.names = c("Gear", "N")) %>% kable_styling(font_size = 11,position = "left")
 ```
   
-```{r sample statistics3, eval = ifelse(regcatch == FALSE, regcatch,BIO), echo = FALSE, message = FALSE, results = 'asis'}
+```{r sample statistics3, eval = BIO, echo = FALSE, message = FALSE, results = 'asis'}
 cat("\nRange of bottom depths at sampling stations (m, will be NA if any station is missing bottom depth):")
 ```
 `r if(BIO==TRUE) round(range((stasamp$bottomdepthstart+stasamp$bottomdepthstop)/2), digits =1)`
 
-```{r trawl statistics4, eval = ifelse(regcatch == FALSE, regcatch,BIO), echo = FALSE, message = FALSE, results = 'asis'}
+```{r trawl statistics4, eval = BIO, echo = FALSE, message = FALSE, results = 'asis'}
 cat("\nFishing depth range (m, will be NA if any station is missing fishing depth)):")
 ```
 `r if(BIO==TRUE) round(range((stasamp$fishingdepthmin+stasamp$fishingdepthmax)/2), digits=1)`
 
-```{r fig bottom depth, eval = ifelse(regcatch == FALSE, regcatch,BIO), echo = FALSE, message = FALSE, results = 'asis'}
+```{r fig bottom depth, eval = BIO, echo = FALSE, message = FALSE, results = 'asis'}
 cat("### Mean bottom depth during hauls  ")
 ```
 
-```{r, echo=FALSE, message=FALSE, fig.width=8, fig.height=3, out.width= "75%", eval = ifelse(regcatch == FALSE, regcatch,BIO)}
+```{r, echo=FALSE, message=FALSE, fig.width=8, fig.height=3, out.width= "75%", eval = BIO}
 #Bottom depth
 ggplot(stdat, aes((bottomdepthstart+bottomdepthstop)/2))+
   geom_histogram(color="black", position = "dodge")+
@@ -491,11 +496,11 @@ ggplot(stdat, aes((bottomdepthstart+bottomdepthstop)/2))+
   scale_y_continuous(breaks = c(0,2,4,6,8,10,12))
 ```
 
-```{r, eval = ifelse(regcatch == FALSE, regcatch,BIO), echo = FALSE, message = FALSE, results = 'asis'}
+```{r, eval = BIO, echo = FALSE, message = FALSE, results = 'asis'}
 cat("### Mean fishing depth during hauls\n")
 ```
 
-```{r, echo=FALSE, message=FALSE, fig.width=6, fig.height=3, out.width= "50%", eval=ifelse(regcatch == FALSE, regcatch,BIO)}
+```{r, echo=FALSE, message=FALSE, fig.width=6, fig.height=3, out.width= "50%", eval=BIO}
 #Fishing depth
 ggplot(stdat, aes((fishingdepthmin+fishingdepthmax)/2, fill = gear.text))+
   geom_histogram(color="black")+
@@ -504,13 +509,13 @@ ggplot(stdat, aes((fishingdepthmin+fishingdepthmax)/2, fill = gear.text))+
 ```
 \pagebreak
 
-```{r, eval = ifelse(regcatch == FALSE, regcatch,BIO), echo = FALSE, message = FALSE, results = 'asis'}
+```{r, eval = BIO, echo = FALSE, message = FALSE, results = 'asis'}
 cat("## Catch composition\n")
 
 cat("### Species diversity\n")
 ```
 
-```{r,echo=FALSE, message=FALSE, eval=ifelse(regcatch == FALSE, regcatch,BIO)}
+```{r,echo=FALSE, message=FALSE, eval=BIO}
 #Sjekk hvilke arter som er vanligst
 options(dplyr.summarise.inform=F)
 tst<-stasamp %>% dplyr::group_by(scientificname) %>% 
@@ -519,12 +524,12 @@ tst<-stasamp %>% dplyr::group_by(scientificname) %>%
                    minN = min(cr.n.nm), maxN = max(cr.n.nm))
 ```
 
-```{r, eval = ifelse(regcatch == FALSE, regcatch,BIO), echo = FALSE, message = FALSE, results = 'asis'}
+```{r, eval = BIO, echo = FALSE, message = FALSE, results = 'asis'}
 cat("Number of species registered during the survey:")
 ```
 `r if(regcatch==TRUE) length(unique(tst$scientificname))`
 
-```{r, echo = FALSE, message=FALSE, fig.width=6, fig.height=4, out.width= "50%", eval = ifelse(regcatch == FALSE, regcatch,BIO)}
+```{r, echo = FALSE, message=FALSE, fig.width=6, fig.height=4, out.width= "50%", eval = BIO}
 #cumulative number of species vs number of stations
 nspec <- data.frame(station=unique(stasamp$station[!is.na(stasamp$station)]),
            nspecies=tapply(cumsum(!duplicated(stasamp$scientificname[!is.na(stasamp$station)])), stasamp$station[!is.na(stasamp$station)],max))
@@ -537,11 +542,11 @@ ggplot(nspec, aes(nstation, nspecies))+geom_line(size = 1)+theme_bw()+
 (excluding samples without station number)")
 ```
 
-```{r, eval = ifelse(regcatch == FALSE, regcatch,BIO), echo = FALSE, message = FALSE, results = 'asis'}
+```{r, eval = BIO, echo = FALSE, message = FALSE, results = 'asis'}
 cat("### Maximum catch rates by gear and species\n")
 ```
 
-```{r,echo=FALSE, message=FALSE, warning=FALSE, eval= ifelse(regcatch == FALSE, regcatch,BIO)}
+```{r,echo=FALSE, message=FALSE, warning=FALSE, eval= BIO}
 options(dplyr.summarise.inform=F)
 tst<-subset(stasamp, gearcondition==1) %>% 
   dplyr::group_by(gear.text,scientificname) %>% 
@@ -550,25 +555,25 @@ tst<-subset(stasamp, gearcondition==1) %>%
                    minN = min(cr.n.nm), maxN = max(cr.n.nm))
 ```
 
-```{r, eval = ifelse(regcatch == FALSE, regcatch,BIO), echo = FALSE, message = FALSE, results = 'asis', fig.align="left"}
+```{r, eval = BIO, echo = FALSE, message = FALSE, results = 'asis', fig.align="left"}
 cat("Species with highest catch rate by biomass:")
 
 kableExtra::kable(tst %>% group_by(gear.text) %>% slice_max(maxW) %>% select(gear.text, scientificname) %>% data.frame(),col.names = c("Gear", "Scientific name")) %>% column_spec(2, italic = TRUE) %>% kable_styling(font_size = 11,position = "left")
 ```
   
   
-```{r, eval = ifelse(regcatch == FALSE, regcatch,BIO), echo = FALSE, message = FALSE, results = 'asis'}
+```{r, eval = BIO, echo = FALSE, message = FALSE, results = 'asis'}
 cat("\nSpecies with highest catch rate by number:")
 
 kableExtra::kable(tst %>% group_by(gear.text) %>% slice_max(maxN) %>% select(gear.text, scientificname) %>% data.frame(), col.names = c("Gear", "Scientific name")) %>% column_spec(2, italic = TRUE) %>% kable_styling(font_size = 11,position = "left")
 ```
 \pagebreak
 
-```{r, eval = ifelse(regcatch == FALSE, regcatch,BIO), echo = FALSE, message = FALSE, results = 'asis'}
+```{r, eval = BIO, echo = FALSE, message = FALSE, results = 'asis'}
 cat("The figures below show maximum catch rates of the 20 species with the highest maximum catch rates.")
 ```
 
-```{r, echo=FALSE, message=FALSE, fig.width=9, fig.height=3.5, out.width= "85%", fig.align="center", warning=FALSE, eval=ifelse(regcatch == FALSE, regcatch,BIO)}
+```{r, echo=FALSE, message=FALSE, fig.width=9, fig.height=3.5, out.width= "85%", fig.align="center", warning=FALSE, eval=BIO}
 #Weight
 for(i in unique(tst$gear.text)){
  g <- ggplot(tst %>% dplyr::filter(gear.text == i & !is.na(scientificname)),
@@ -596,15 +601,15 @@ for(i in unique(tst$gear.text)){
 }
 ```
 
-```{r, eval = ifelse(regcatch == FALSE, regcatch,BIO), echo = FALSE, message = FALSE, results = 'asis'}
+```{r, eval = BIO, echo = FALSE, message = FALSE, results = 'asis'}
 cat("## Spatial variation in catches of common species\n")
 ```
 
-```{r, eval = ifelse(regcatch == FALSE, regcatch,BIO), echo = FALSE, message = FALSE, results = 'asis'}
+```{r, eval = BIO, echo = FALSE, message = FALSE, results = 'asis'}
 cat("Catches are split by gear. Bubble size is comparable between gears within the same species, but not between species. Samples taken with unspecified gear are removed.")
 ```
 
-```{r spatial distribution of catches, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 11, fig.height = 5, out.width="100%", fig.align="left", eval = ifelse(regcatch == FALSE, regcatch,BIO)}
+```{r spatial distribution of catches, echo=FALSE, message=FALSE, warning=FALSE, fig.width = 11, fig.height = 5, out.width="100%", fig.align="left", eval = BIO}
 
 dat <- stasamp[!is.na(stasamp$gear.text),]
 
@@ -703,11 +708,11 @@ for(i in 1:length(species)) {
 }
 ```
 
-```{r, eval = ifelse(regcatch == FALSE, regcatch,BIO), echo = FALSE, message = FALSE, results = 'asis'}
+```{r, eval = BIO, echo = FALSE, message = FALSE, results = 'asis'}
 cat("## Length-weight relationships\n")
 ```
 
-```{r, echo=FALSE, message=FALSE, fig.width=11, fig.height=8, out.width= "100%", warning=FALSE, eval = ifelse(regcatch == FALSE, regcatch,BIO)}
+```{r, echo=FALSE, message=FALSE, fig.width=11, fig.height=8, out.width= "100%", warning=FALSE, eval = BIO}
 stasampindi <- right_join(stasamp,dd[[1]]$individual)
 stasampindiage <- left_join(stasampindi, dd[[1]]$agedetermination)
 
@@ -768,11 +773,11 @@ if(nrow(species2) > 0 & nrow(species2) <= 50){
 }
 ```
 
-```{r, eval = ifelse(regcatch == FALSE, regcatch,BIO), echo = FALSE, message = FALSE, results = 'asis'}
+```{r, eval = BIO, echo = FALSE, message = FALSE, results = 'asis'}
 cat("## Length-age relationships\n")
 ```
 
-```{r, echo=FALSE, message=FALSE, fig.width=9, fig.height=6, out.width= "80%", warning=FALSE, eval=ifelse(regcatch == FALSE, regcatch,BIO)}
+```{r, echo=FALSE, message=FALSE, fig.width=9, fig.height=6, out.width= "80%", warning=FALSE, eval=BIO}
 if(nrow(species2) > 0){
   ggplot(stasampindiage %>% filter(age>0 & !is.na(scientificname)), 
          aes(length.cm,age))+geom_point(size = 0.5)+
